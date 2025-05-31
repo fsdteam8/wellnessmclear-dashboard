@@ -7,6 +7,10 @@ import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Search, Send } from "lucide-react"
 
+
+
+
+
 const mockMessages = [
   {
     id: 1,

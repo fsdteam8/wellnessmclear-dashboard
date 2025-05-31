@@ -6,8 +6,7 @@ import { Breadcrumb } from "@/components/breadcrumb"
 import { PageHeader } from "@/components/page-header"
 import { DataTable } from "@/components/data-table"
 import { useToast } from "@/hooks/use-toast"
-import { CategoryStats } from "@/components/category-stats"
-import { Subcategory, SubcategoryStats, BaseColumn } from "@/type/types"
+import { Subcategory, BaseColumn } from "@/type/types"
 
 type SubcategoryColumn = BaseColumn<Subcategory>
 
@@ -29,11 +28,11 @@ const columns: SubcategoryColumn[] = [
 	{ key: "date", label: "Date" },
 ]
 
-const subcategoryStats: SubcategoryStats = {
-	totalCategories: 1,
-	totalSubcategories: mockSubcategories.length,
-	activeCategories: 1,
-}
+// const subcategoryStats: SubcategoryStats = {
+// 	totalCategories: 1,
+// 	totalSubcategories: mockSubcategories.length,
+// 	activeCategories: 1,
+// }
 
 export default function SubcategoryPage() {
 	const router = useRouter()
@@ -76,7 +75,7 @@ export default function SubcategoryPage() {
 	return (
 		<div className="flex h-screen bg-gray-50">
 			<div className="flex-1 overflow-auto">
-				<div className="p-6">
+				<div className="p-10">
 					<Breadcrumb
 						items={[
 							{ label: "Dashboard", href: "/" },
@@ -87,15 +86,15 @@ export default function SubcategoryPage() {
 
 					<PageHeader
 						title={`${category.charAt(0).toUpperCase() + category.slice(1)} List`}
-						buttonText="Add sub_categories"
 						onButtonClick={handleAddSubcategory}
+						buttonText="Add sub_categories"
 					/>
 
-					<CategoryStats
+					{/* <CategoryStats
 						totalCategories={subcategoryStats.totalCategories}
 						totalSubcategories={subcategoryStats.totalSubcategories}
 						activeCategories={subcategoryStats.activeCategories}
-					/>
+					/> */}
 
 					<DataTable<Subcategory>
 						columns={columns}

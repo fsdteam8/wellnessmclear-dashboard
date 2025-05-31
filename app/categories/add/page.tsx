@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
+import { Save } from "lucide-react"
 
 export default function AddCategoryPage() {
   const router = useRouter()
@@ -90,7 +91,7 @@ export default function AddCategoryPage() {
 
               <div className="flex justify-end">
                 <Button type="submit" disabled={isLoading} className="bg-slate-600 hover:bg-slate-700">
-                  {isLoading ? "Saving..." : "Save"}
+                  <span><Save /></span>{isLoading ? "Saving..." : "Save"}
                 </Button>
               </div>
             </form>

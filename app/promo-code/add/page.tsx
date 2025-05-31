@@ -1,42 +1,57 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { Breadcrumb } from "@/components/breadcrumb"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useToast } from "@/hooks/use-toast"
-import { CalendarIcon, Save } from "lucide-react"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Calendar } from "@/components/ui/calendar"
-import { format } from "date-fns"
-import { cn } from "@/lib/utils"
+import type React from "react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Breadcrumb } from "@/components/breadcrumb";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+import { CalendarIcon, Save } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 export default function AddCodePage() {
-  const router = useRouter()
-  const { toast } = useToast()
+  const router = useRouter();
+  const { toast } = useToast();
   const [formData, setFormData] = useState({
     code: "",
     discount: "",
     startDate: undefined as Date | undefined,
     expiryDate: undefined as Date | undefined,
     status: "Active",
-  })
-  const [isLoading, setIsLoading] = useState(false)
+  });
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
-    if (!formData.code.trim() || !formData.discount.trim() || !formData.startDate || !formData.expiryDate) {
+    if (
+      !formData.code.trim() ||
+      !formData.discount.trim() ||
+      !formData.startDate ||
+      !formData.expiryDate
+    ) {
       toast({
         title: "Error",
         description: "All fields are required",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
 
     if (formData.code.length < 5 || formData.code.length > 10) {
@@ -44,8 +59,8 @@ export default function AddCodePage() {
         title: "Error",
         description: "Code must be between 5 and 10 characters",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
 
     if (!/^[a-zA-Z0-9]+$/.test(formData.code)) {
@@ -53,25 +68,24 @@ export default function AddCodePage() {
         title: "Error",
         description: "Code must be alphanumeric",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
 
-    setIsLoading(true)
+    setIsLoading(true);
 
     // Simulate API call
     setTimeout(() => {
       toast({
         title: "Success",
         description: "Promo code created successfully",
-      })
-      router.push("/promo-code")
-    }, 1000)
-  }
+      });
+      router.push("/promo-code");
+    }, 1000);
+  };
 
   return (
-    <div className="flex h-screen bg-gray-100">
-
+    <div className="flex h-screen">
       <div className="flex-1 overflow-auto">
         <div className="p-6">
           <Breadcrumb
@@ -87,32 +101,42 @@ export default function AddCodePage() {
             <p className="text-sm text-gray-500">Dashboard &gt; code</p>
           </div>
 
-          <div className="bg-white rounded-lg p-8 shadow">
+          <div className="p-6">
             <form onSubmit={handleSubmit} className="space-y-8">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                 <div>
-                  <Label htmlFor="code" className="block text-sm font-medium text-gray-700 mb-1">
+                  <Label
+                    htmlFor="code"
+                    className="block text-base font-medium text-black mb-3"
+                  >
                     Code (5-10 chars, alphanumeric)
                   </Label>
                   <Input
                     id="code"
                     value={formData.code}
-                    onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-                    className="mt-1"
+                    onChange={(e) =>
+                      setFormData({ ...formData, code: e.target.value })
+                    }
+                    className="h-[60px]"
                     maxLength={10}
                     minLength={5}
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="discount" className="block text-sm font-medium text-gray-700 mb-1">
+                  <Label
+                    htmlFor="discount"
+                    className="block text-base font-medium text-black mb-3"
+                  >
                     Discount
                   </Label>
                   <Input
                     id="discount"
                     value={formData.discount}
-                    onChange={(e) => setFormData({ ...formData, discount: e.target.value })}
-                    className="mt-1"
+                    onChange={(e) =>
+                      setFormData({ ...formData, discount: e.target.value })
+                    }
+                    className="h-[60px]"
                     placeholder="e.g., $10 or 10%"
                   />
                 </div>
@@ -120,16 +144,19 @@ export default function AddCodePage() {
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-6">
                 <div>
-                  <Label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-1">
+                  <Label
+                    htmlFor="startDate"
+                    className="block text-base font-medium text-black mb-3"
+                  >
                     Start Date
                   </Label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
-                        variant={"outline"}
+                        variant="outline"
                         className={cn(
-                          "w-full justify-start text-left font-normal mt-1",
-                          !formData.startDate && "text-muted-foreground",
+                          "w-full justify-start text-left font-normal mt-3 h-[60px]",
+                          !formData.startDate && "text-muted-foreground"
                         )}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
@@ -144,7 +171,9 @@ export default function AddCodePage() {
                       <Calendar
                         mode="single"
                         selected={formData.startDate}
-                        onSelect={(date) => setFormData({ ...formData, startDate: date })}
+                        onSelect={(date) =>
+                          setFormData({ ...formData, startDate: date })
+                        }
                         initialFocus
                       />
                     </PopoverContent>
@@ -152,16 +181,19 @@ export default function AddCodePage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="expiryDate" className="block text-sm font-medium text-gray-700 mb-1">
+                  <Label
+                    htmlFor="expiryDate"
+                    className="block text-base font-medium text-black mb-3"
+                  >
                     Expiry Date
                   </Label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
-                        variant={"outline"}
+                        variant="outline"
                         className={cn(
-                          "w-full justify-start text-left font-normal mt-1",
-                          !formData.expiryDate && "text-muted-foreground",
+                          "w-full justify-start text-left font-normal mt-1 h-[60px]",
+                          !formData.expiryDate && "text-muted-foreground"
                         )}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
@@ -176,7 +208,9 @@ export default function AddCodePage() {
                       <Calendar
                         mode="single"
                         selected={formData.expiryDate}
-                        onSelect={(date) => setFormData({ ...formData, expiryDate: date })}
+                        onSelect={(date) =>
+                          setFormData({ ...formData, expiryDate: date })
+                        }
                         initialFocus
                       />
                     </PopoverContent>
@@ -184,14 +218,19 @@ export default function AddCodePage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
+                  <Label
+                    htmlFor="status"
+                    className="block text-base font-medium text-black mb-3"
+                  >
                     Status
                   </Label>
                   <Select
                     value={formData.status}
-                    onValueChange={(value) => setFormData({ ...formData, status: value })}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, status: value })
+                    }
                   >
-                    <SelectTrigger className="mt-1">
+                    <SelectTrigger className="mt-1 h-[60px]">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -204,7 +243,11 @@ export default function AddCodePage() {
               </div>
 
               <div className="flex justify-end pt-4">
-                <Button type="submit" disabled={isLoading} className="bg-slate-700 hover:bg-slate-800 text-white">
+                <Button
+                  type="submit"
+                  disabled={isLoading}
+                  className="bg-slate-700 hover:bg-slate-800 text-white h-[60px]"
+                >
                   <Save className="h-4 w-4 mr-2" />
                   {isLoading ? "Saving..." : "Save"}
                 </Button>
@@ -214,5 +257,5 @@ export default function AddCodePage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

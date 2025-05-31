@@ -8,7 +8,7 @@ import { PageHeader } from "@/components/page-header"
 import { DataTable } from "@/components/data-table"
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
-import { CategoryStats } from "@/components/category-stats"
+// import { CategoryStats } from "@/components/category-stats"
 
 interface Category {
   id: number
@@ -17,11 +17,11 @@ interface Category {
   subcategories: number
 }
 
-interface CategoryStats {
-  totalCategories: number
-  totalSubcategories: number
-  activeCategories: number
-}
+// interface CategoryStats {
+//   totalCategories: number
+//   totalSubcategories: number
+//   activeCategories: number
+// }
 
 interface Column {
   key: string
@@ -31,8 +31,8 @@ interface Column {
 
 const mockCategories: Category[] = [
   { id: 1, name: "Entertainment", date: "04/15/2025", subcategories: 10 },
-  { id: 2, name: "Health", date: "04/15/2025", subcategories: 10 },
-  { id: 3, name: "Sports", date: "04/15/2025", subcategories: 10 },
+  { id: 2, name: "Entertainment", date: "04/15/2025", subcategories: 10 },
+  { id: 3, name: "Entertainment", date: "04/15/2025", subcategories: 10 },
   { id: 4, name: "Entertainment", date: "04/15/2025", subcategories: 10 },
   { id: 5, name: "Entertainment", date: "04/15/2025", subcategories: 10 },
   { id: 6, name: "Entertainment", date: "04/15/2025", subcategories: 10 },
@@ -101,11 +101,11 @@ export default function CategoriesPage() {
     }
   }
 
-  const statsData: CategoryStats = {
-    totalCategories: 12,
-    totalSubcategories: 45,
-    activeCategories: 10,
-  }
+  // const statsData: CategoryStats = {
+  //   totalCategories: 12,
+  //   totalSubcategories: 45,
+  //   activeCategories: 10,
+  // }
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -117,11 +117,11 @@ export default function CategoriesPage() {
           <PageHeader title="Category List" buttonText="Add Categories" onButtonClick={handleAddCategory} />
 
           {/* Add the stats component before the data table */}
-          <CategoryStats
+          {/* <CategoryStats
             totalCategories={statsData.totalCategories}
             totalSubcategories={statsData.totalSubcategories}
             activeCategories={statsData.activeCategories}
-          />
+          /> */}
 
           <DataTable
             columns={columns}

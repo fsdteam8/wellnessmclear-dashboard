@@ -16,7 +16,7 @@ const mockBlogs: Blog[] = [
 			"It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout. The point of using Lorem Ipsum is that it",
 		added: "04/21/2025 03:18pm",
 		comments: 180,
-		thumbnail: "/placeholder.svg?height=60&width=80",
+		thumbnail: "/images/damoImage.png",
 	},
 	{
 		id: 2,
@@ -25,7 +25,7 @@ const mockBlogs: Blog[] = [
 			"It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout. The point of using Lorem Ipsum is that it",
 		added: "04/21/2025 03:18pm",
 		comments: 180,
-		thumbnail: "/placeholder.svg?height=60&width=80",
+		thumbnail: "/images/damoImage.png",
 	},
 	{
 		id: 3,
@@ -34,7 +34,7 @@ const mockBlogs: Blog[] = [
 			"It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout. The point of using Lorem Ipsum is that it",
 		added: "04/21/2025 03:18pm",
 		comments: 180,
-		thumbnail: "/placeholder.svg?height=60&width=80",
+		thumbnail: "/images/damoImage.png",
 	},
 	{
 		id: 4,
@@ -43,7 +43,7 @@ const mockBlogs: Blog[] = [
 			"It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout. The point of using Lorem Ipsum is that it",
 		added: "04/21/2025 03:18pm",
 		comments: 180,
-		thumbnail: "/placeholder.svg?height=60&width=80",
+		thumbnail: "/images/damoImage.png",
 	},
 	{
 		id: 5,
@@ -52,7 +52,7 @@ const mockBlogs: Blog[] = [
 			"It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout. The point of using Lorem Ipsum is that it",
 		added: "04/21/2025 03:18pm",
 		comments: 180,
-		thumbnail: "/placeholder.svg?height=60&width=80",
+		thumbnail: "/images/damoImage.png",
 	},
 ]
 

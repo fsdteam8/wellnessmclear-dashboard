@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Breadcrumb } from "@/components/breadcrumb"
+// import { Breadcrumb } from "@/components/breadcrumb"
 import { DataTable } from "@/components/data-table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -45,7 +45,7 @@ const mockRequests: ResourceRequest[] = [
 		format: "All Format",
 		date: "04/21/2025\n03:18pm",
 		thumbnail: "/placeholder.svg?height=40&width=40",
-		statuses: ["Approved", "Reject"],
+		statuses: ["Approved", "Pending"],
 	},
 	{
 		id: 1140,
@@ -69,7 +69,7 @@ const mockRequests: ResourceRequest[] = [
 		format: "All Format",
 		date: "04/21/2025\n03:18pm",
 		thumbnail: "/placeholder.svg?height=40&width=40",
-		statuses: ["Approved", "Reject"],
+		statuses: ["Approved", "Pending"],
 	},
 	{
 		id: 1140,
@@ -93,7 +93,7 @@ const mockRequests: ResourceRequest[] = [
 		format: "All Format",
 		date: "04/21/2025\n03:18pm",
 		thumbnail: "/placeholder.svg?height=40&width=40",
-		statuses: ["Approved", "Reject"],
+		statuses: ["Approved", "Pending"],
 	},
 ]
 
@@ -182,7 +182,7 @@ export default function RequestResourcePage() {
 
 			<div className="flex-1 overflow-auto">
 				<div className="p-6">
-					<Breadcrumb items={[{ label: "Dashboard", href: "/" }, { label: "Request Resource" }]} />
+					{/* <Breadcrumb items={[{ label: "Dashboard", href: "/" }, { label: "Request Resource" }]} /> */}
 
 					<div className="mb-6">
 						<h1 className="text-2xl font-semibold text-gray-900">Request Resource</h1>

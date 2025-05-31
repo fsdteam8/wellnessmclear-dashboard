@@ -28,7 +28,7 @@ export default function RootLayout({
 
       <Sidebar />
 
-        <div className="w-full">
+        <div className="w-full mt-[60px] bg-[#EDEEF1]">
           {children}</div>
       </div>
         

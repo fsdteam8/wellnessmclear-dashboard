@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useState } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { Breadcrumb } from "@/components/breadcrumb"
+// import { Breadcrumb } from "@/components/breadcrumb"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -51,14 +51,14 @@ export default function AddSubcategoryPage() {
 
       <div className="flex-1 overflow-auto">
         <div className="p-6">
-          <Breadcrumb
+          {/* <Breadcrumb
             items={[
               { label: "Dashboard", href: "/" },
               { label: "Categories", href: "/categories" },
               { label: category.charAt(0).toUpperCase() + category.slice(1), href: `/categories/${category}` },
               { label: "Add Subcategory" }, // Current page
             ]}
-          />
+          /> */}
 
           <div className="mb-6">
             <h1 className="text-2xl font-semibold text-gray-900">

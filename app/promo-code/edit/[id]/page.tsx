@@ -130,7 +130,7 @@ export default function EditCodePage() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex h-screen">
 
       <div className="flex-1 overflow-auto">
         <div className="p-6">
@@ -147,7 +147,7 @@ export default function EditCodePage() {
             <p className="text-sm text-gray-500">Dashboard &gt; code</p>
           </div>
 
-          <div className="bg-white rounded-lg p-8 shadow">
+          <div className="p-8 shadow">
             <form onSubmit={handleSubmit} className="space-y-8">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                 <div>

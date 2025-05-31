@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Breadcrumb } from "@/components/breadcrumb"
+// import { Breadcrumb } from "@/components/breadcrumb"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -95,11 +95,11 @@ export default function MessagePage() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen">
 
       <div className="flex-1 overflow-hidden">
         <div className="p-6 pb-0">
-          <Breadcrumb items={[{ label: "Dashboard", href: "/" }, { label: "Message" }]} />
+          {/* <Breadcrumb items={[{ label: "Dashboard", href: "/" }, { label: "Message" }]} /> */}
 
           <div className="mb-6">
             <h1 className="text-2xl font-semibold text-gray-900">Message</h1>

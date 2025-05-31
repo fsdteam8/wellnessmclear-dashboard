@@ -54,7 +54,7 @@ export default function AddResourcePage() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-scree">
 
       <div className="flex-1 overflow-auto">
         <div className="p-6">
@@ -78,7 +78,7 @@ export default function AddResourcePage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2">
-              <div className="bg-white rounded-lg p-6">
+              <div className=" p-6">
                 <form id="resource-form" onSubmit={handleSubmit} className="space-y-6">
                   <div>
                     <Label htmlFor="title">Add Title</Label>
@@ -87,7 +87,7 @@ export default function AddResourcePage() {
                       placeholder="Add your title..."
                       value={formData.title}
                       onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                      className="mt-1"
+                      className="mt-1 border border-[#B6B6B6] h-[50px]"
                     />
                   </div>
 
@@ -99,7 +99,7 @@ export default function AddResourcePage() {
                         placeholder="Add price..."
                         value={formData.price}
                         onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                        className="mt-1"
+                        className="mt-1 border border-[#B6B6B6] h-[50px]"
                       />
                     </div>
 
@@ -110,7 +110,7 @@ export default function AddResourcePage() {
                         placeholder="Add Discount Price..."
                         value={formData.discountPrice}
                         onChange={(e) => setFormData({ ...formData, discountPrice: e.target.value })}
-                        className="mt-1"
+                        className="mt-1 border border-[#B6B6B6] h-[50px]"
                       />
                     </div>
 
@@ -121,7 +121,7 @@ export default function AddResourcePage() {
                         placeholder="Add Quantity..."
                         value={formData.quantity}
                         onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
-                        className="mt-1"
+                        className="mt-1 border border-[#B6B6B6] h-[50px]"
                       />
                     </div>
 
@@ -131,10 +131,10 @@ export default function AddResourcePage() {
                         value={formData.format}
                         onValueChange={(value) => setFormData({ ...formData, format: value })}
                       >
-                        <SelectTrigger className="mt-1">
+                        <SelectTrigger className="mt-1 border border-[#B6B6B6] h-[50px]">
                           <SelectValue placeholder="Add format..." />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="border border-[#B6B6B6] h-[50px]">
                           <SelectItem value="pdf">PDF</SelectItem>
                           <SelectItem value="doc">DOC</SelectItem>
                           <SelectItem value="all">All Format</SelectItem>
@@ -151,13 +151,13 @@ export default function AddResourcePage() {
                         placeholder="Description..."
                         value={formData.description}
                         onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                        className="min-h-[200px]"
+                        className="min-h-[200px] border border-[#B6B6B6] h-[50px]"
                       />
                       <div className="flex items-center justify-between mt-2 p-2 border-t">
                         <div className="flex items-center space-x-2">
                           <span className="text-sm">Font</span>
                           <Select defaultValue="body">
-                            <SelectTrigger className="w-20">
+                            <SelectTrigger className="w-20 border border-[#B6B6B6]">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -165,33 +165,33 @@ export default function AddResourcePage() {
                               <SelectItem value="heading">Heading</SelectItem>
                             </SelectContent>
                           </Select>
-                          <Button type="button" variant="outline" size="sm">
+                          <button type="button" className="border border-[#B6B6B6] p-2">
                             <Bold className="h-4 w-4" />
-                          </Button>
-                          <Button type="button" variant="outline" size="sm">
+                          </button>
+                          <button type="button" className="border border-[#B6B6B6] p-2">
                             <Italic className="h-4 w-4" />
-                          </Button>
-                          <Button type="button" variant="outline" size="sm">
+                          </button>
+                          <button type="button" className="border border-[#B6B6B6] p-2">
                             <Underline className="h-4 w-4" />
-                          </Button>
+                          </button>
                         </div>
                         <div className="flex items-center space-x-1">
                           <span className="text-sm">Alignment</span>
-                          <Button type="button" variant="outline" size="sm">
+                          <button type="button" className="border border-[#B6B6B6] p-2">
                             <AlignLeft className="h-4 w-4" />
-                          </Button>
-                          <Button type="button" variant="outline" size="sm">
+                          </button>
+                          <button type="button" className="border border-[#B6B6B6] p-2">
                             <AlignCenter className="h-4 w-4" />
-                          </Button>
-                          <Button type="button" variant="outline" size="sm">
+                          </button>
+                          <button type="button" className="border border-[#B6B6B6] p-2">
                             <AlignRight className="h-4 w-4" />
-                          </Button>
-                          <Button type="button" variant="outline" size="sm">
+                          </button>
+                          <button type="button" className="border border-[#B6B6B6] p-2">
                             <AlignJustify className="h-4 w-4" />
-                          </Button>
-                          <Button type="button" variant="outline" size="sm">
+                          </button>
+                          <button type="button" className="border border-[#B6B6B6] p-2">
                             <List className="h-4 w-4" />
-                          </Button>
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -201,7 +201,7 @@ export default function AddResourcePage() {
             </div>
 
             <div className="space-y-6">
-              <div className="bg-white rounded-lg p-6">
+              <div className="p-6">
                 <div className="space-y-4">
                   <div>
                     <Label htmlFor="category">Category</Label>
@@ -209,7 +209,7 @@ export default function AddResourcePage() {
                       value={formData.category}
                       onValueChange={(value) => setFormData({ ...formData, category: value })}
                     >
-                      <SelectTrigger className="mt-1">
+                      <SelectTrigger className="mt-1 border border-[#B6B6B6] h-[50px]">
                         <SelectValue placeholder="Select a category" />
                       </SelectTrigger>
                       <SelectContent>
@@ -226,7 +226,7 @@ export default function AddResourcePage() {
                       value={formData.subcategory}
                       onValueChange={(value) => setFormData({ ...formData, subcategory: value })}
                     >
-                      <SelectTrigger className="mt-1">
+                      <SelectTrigger className="mt-1 border border-[#B6B6B6] h-[50px]">
                         <SelectValue placeholder="Select a sub_category" />
                       </SelectTrigger>
                       <SelectContent>
@@ -239,7 +239,7 @@ export default function AddResourcePage() {
                 </div>
               </div>
 
-              <div className="bg-white rounded-lg p-6">
+              <div className="p-6">
                 <Label>Thumbnail</Label>
                 <Card className="mt-2">
                   <CardContent className="p-6">

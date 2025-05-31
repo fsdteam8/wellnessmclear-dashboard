@@ -1,25 +1,32 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-"use client"
+"use client";
 
-import type React from "react"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Button } from "@/components/ui/button"
-import { ChevronLeft, ChevronRight, Edit, Trash2 } from "lucide-react"
-import { useState } from "react"
-import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog"
+import type React from "react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { ChevronLeft, ChevronRight, Edit, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
 // import { BaseColumn } from "@/type/types"
 
 interface DataTableProps<T> {
   // columns: BaseColumn<T>[] || string[]
-  columns: any[]
-  data: T[]
-  currentPage: number
-  totalPages: number
-  totalItems: number
-  itemsPerPage: number
-  onPageChange: (page: number) => void
-  onEdit?: (item: T) => void
-  onDelete?: (item: T) => void
+  columns: any[];
+  data: T[];
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+  itemsPerPage: number;
+  onPageChange: (page: number) => void;
+  onEdit?: (item: T) => void;
+  onDelete?: (item: T) => void;
 }
 
 export function DataTable<T>({
@@ -33,40 +40,40 @@ export function DataTable<T>({
   onEdit,
   onDelete,
 }: DataTableProps<T>) {
-  const startItem = (currentPage - 1) * itemsPerPage + 1
-  const endItem = Math.min(currentPage * itemsPerPage, totalItems)
+  const startItem = (currentPage - 1) * itemsPerPage + 1;
+  const endItem = Math.min(currentPage * itemsPerPage, totalItems);
 
   // Add state for delete confirmation
-  const [deleteItem, setDeleteItem] = useState<T | null>(null)
-  const [isDeleting, setIsDeleting] = useState(false)
+  const [deleteItem, setDeleteItem] = useState<T | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   console.log(isDeleting);
   // Update the delete button click handler
   const handleDeleteClick = (item: T) => {
-    setDeleteItem(item)
-  }
+    setDeleteItem(item);
+  };
 
   const handleDeleteConfirm = async () => {
     if (deleteItem && onDelete) {
-      setIsDeleting(true)
+      setIsDeleting(true);
       try {
-        await onDelete(deleteItem)
-        setDeleteItem(null)
+        await onDelete(deleteItem);
+        setDeleteItem(null);
       } catch {
         // Error handling is done in the parent component
       } finally {
-        setIsDeleting(false)
+        setIsDeleting(false);
       }
     }
-  }
+  };
 
   const handleDeleteCancel = () => {
-    setDeleteItem(null)
-  }
+    setDeleteItem(null);
+  };
 
   const renderPaginationButtons = () => {
-    const buttons = []
-    const maxVisiblePages = 5
+    const buttons = [];
+    const maxVisiblePages = 5;
 
     // Previous button
     buttons.push(
@@ -79,15 +86,15 @@ export function DataTable<T>({
         className="mr-1"
       >
         <ChevronLeft className="h-4 w-4" />
-      </Button>,
-    )
+      </Button>
+    );
 
     // Page numbers
-    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2))
-    const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1)
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
 
     if (endPage - startPage + 1 < maxVisiblePages) {
-      startPage = Math.max(1, endPage - maxVisiblePages + 1)
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
     }
 
     for (let i = startPage; i <= endPage; i++) {
@@ -100,8 +107,8 @@ export function DataTable<T>({
           className="mx-1"
         >
           {i}
-        </Button>,
-      )
+        </Button>
+      );
     }
 
     // Show ellipsis and last page if needed
@@ -110,14 +117,20 @@ export function DataTable<T>({
         buttons.push(
           <span key="ellipsis" className="mx-2">
             ...
-          </span>,
-        )
+          </span>
+        );
       }
       buttons.push(
-        <Button key={totalPages} variant="outline" size="sm" onClick={() => onPageChange(totalPages)} className="mx-1">
+        <Button
+          key={totalPages}
+          variant="outline"
+          size="sm"
+          onClick={() => onPageChange(totalPages)}
+          className="mx-1"
+        >
           {totalPages}
-        </Button>,
-      )
+        </Button>
+      );
     }
 
     // Next button
@@ -131,44 +144,66 @@ export function DataTable<T>({
         className="ml-1"
       >
         <ChevronRight className="h-4 w-4" />
-      </Button>,
-    )
+      </Button>
+    );
 
-    return buttons
-  }
+    return buttons;
+  };
 
   return (
     <div className="space-y-4">
       <div className="rounded-lg border bg-white">
         <Table>
           <TableHeader>
-            <TableRow className="bg-gray-50">
+            <TableRow className="bg-gray-50 ">
               {columns.map((column) => (
-                <TableHead key={column.key} className="font-semibold text-gray-900">
+                <TableHead
+                  key={column.key}
+                  className="font-semibold text-gray-900 text-left px-4 py-2"
+                >
                   {column.label}
                 </TableHead>
               ))}
-              {(onEdit || onDelete) && <TableHead className="font-semibold text-gray-900">Action</TableHead>}
+              {(onEdit || onDelete) && (
+                <TableHead className="font-semibold text-gray-900 text-center pl-2 py-2">
+                  Action
+                </TableHead>
+              )}
             </TableRow>
           </TableHeader>
           <TableBody>
             {data.map((row, index) => (
               <TableRow key={index} className="hover:bg-gray-50">
                 {columns.map((column) => (
-                  <TableCell key={column.key}>
-                    {column.render ? column.render((row as any)[column.key], row) : String((row as any)[column.key])}
+                  <TableCell
+                    key={column.key}
+                    className="text-left px-4 py-2 whitespace-nowrap"
+                    style={{ width: column.width || "auto" }}
+                  >
+                    {column.render
+                      ? column.render((row as any)[column.key], row)
+                      : String((row as any)[column.key])}
                   </TableCell>
                 ))}
+
                 {(onEdit || onDelete) && (
-                  <TableCell>
-                    <div className="flex items-center space-x-2">
+                  <TableCell className="text-center px-4 py-2">
+                    <div className="flex justify-center items-center space-x-2">
                       {onEdit && (
-                        <Button variant="ghost" size="sm" onClick={() => onEdit(row)}>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onEdit(row)}
+                        >
                           <Edit className="h-4 w-4" />
                         </Button>
                       )}
                       {onDelete && (
-                        <Button variant="ghost" size="sm" onClick={() => handleDeleteClick(row)}>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteClick(row)}
+                        >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       )}
@@ -202,5 +237,5 @@ export function DataTable<T>({
         description="Are you sure you want to delete this item? This action cannot be undone."
       />
     </div>
-  )
+  );
 }

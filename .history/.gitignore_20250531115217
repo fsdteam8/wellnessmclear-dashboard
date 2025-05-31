@@ -1,0 +1,4 @@
+# Example entries in .gitignore
+../*
+!.gitignore
+/.histoy/*

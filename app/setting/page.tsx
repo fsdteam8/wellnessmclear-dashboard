@@ -1,7 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { Breadcrumb } from "@/components/breadcrumb"
+// import { Breadcrumb } from "@/components/breadcrumb"
 import { ChevronRight } from "lucide-react"
 
 export default function SettingPage() {
@@ -19,11 +19,11 @@ export default function SettingPage() {
   ]
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-[#EDEEF1]">
 
       <div className="flex-1 overflow-auto">
         <div className="p-6">
-          <Breadcrumb items={[{ label: "Dashboard", href: "/" }, { label: "Setting" }]} />
+          {/* <Breadcrumb items={[{ label: "Dashboard", href: "/" }, { label: "Setting" }]} /> */}
 
           <div className="mb-6">
             <h1 className="text-2xl font-semibold text-gray-900">Setting</h1>
@@ -35,7 +35,7 @@ export default function SettingPage() {
               <div
                 key={index}
                 onClick={option.onClick}
-                className="bg-white rounded-lg p-4 cursor-pointer hover:bg-gray-50 transition-colors border border-gray-200"
+                className="border border-[#707070] rounded-lg p-4 cursor-pointer hover:bg-gray-50 transition-colors "
               >
                 <div className="flex items-center justify-between">
                   <span className="text-gray-900 font-medium">{option.title}</span>

@@ -152,10 +152,10 @@ export function DataTable<T>({
 
   return (
     <div className="space-y-4">
-      <div className="rounded-lg border bg-white">
-        <Table>
+      <div className="rounded-lg border">
+        <Table className="border border-[#707070]">
           <TableHeader>
-            <TableRow className="bg-gray-50 ">
+            <TableRow className="border border-[#707070]">
               {columns.map((column) => (
                 <TableHead
                   key={column.key}
@@ -173,11 +173,14 @@ export function DataTable<T>({
           </TableHeader>
           <TableBody>
             {data.map((row, index) => (
-              <TableRow key={index} className="hover:bg-gray-50">
+              <TableRow
+                key={index}
+                className="hover:bg-gray-50 border border-[#707070]"
+              >
                 {columns.map((column) => (
                   <TableCell
                     key={column.key}
-                    className="text-left px-4 py-2 whitespace-nowrap"
+                    className="text-left px-4 py-5 whitespace-nowrap"
                     style={{ width: column.width || "auto" }}
                   >
                     {column.render

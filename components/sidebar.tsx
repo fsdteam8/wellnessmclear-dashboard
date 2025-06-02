@@ -42,7 +42,7 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <div className="flex h-screen sticky bottom-0 top-0 w-[350px] flex-col bg-slate-700 z-50">
+    <div className="flex h-screen sticky bottom-0 top-0 w-[350px] flex-col bg-[#393C50] z-50">
       <div className="h-[80px] px-4 py-3">
         <Image
           src="/images/authImg.svg"

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Breadcrumb } from "@/components/breadcrumb"
+// import { Breadcrumb } from "@/components/breadcrumb"
 import { DataTable } from "@/components/data-table"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -108,18 +108,24 @@ export default function SellerProfilePage() {
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <Breadcrumb items={[{ label: "Dashboard", href: "/" }, { label: "Seller Profile" }]} />
+              {/* <Breadcrumb items={[{ label: "Dashboard", href: "/" }, { label: "Seller Profile" }]} /> */}
               <div className="mt-4">
                 <h1 className="text-2xl font-semibold text-gray-900">Seller Profile</h1>
                 <p className="text-gray-500">Dashboard &gt; Seller Profile</p>
               </div>
             </div>
-            <Card className="bg-slate-600 text-white">
+            <Card className="bg-[#525773] text-white w-[259px] rounded-[8px]">
               <CardContent className="p-4">
-                <div>
-                  <p className="text-sm opacity-90">Total Seller</p>
-                  <p className="text-xl font-bold">4,200.00</p>
+                <div className="space-y-3">
+                <p className="text-base opacity-90 ml-2">Total Sales</p>
+
+                <div className="flex items-center space-x-2">
+                  <div className="w-[10px] h-[10px] bg-[#09B850] rounded-full"></div>
+                  <p className="text-[16px] font-bold">
+                    $132,570.00
+                  </p>
                 </div>
+              </div>
               </CardContent>
             </Card>
           </div>

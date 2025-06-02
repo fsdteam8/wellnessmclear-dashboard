@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Breadcrumb } from "@/components/breadcrumb"
+// import { Breadcrumb } from "@/components/breadcrumb"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -46,24 +46,24 @@ export default function AddCategoryPage() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-[#EDEEF1] p-6">
 
       <div className="flex-1 overflow-auto">
-        <div className="p-6">
-          <Breadcrumb
+        <div className="">
+          {/* <Breadcrumb
             items={[
               { label: "Dashboard", href: "/" },
               { label: "Categories", href: "/categories" }, // Changed from "category" to "Categories"
               { label: "Add Category" }, // Current page
             ]}
-          />
+          /> */}
 
           <div className="mb-6">
             <h1 className="text-2xl font-semibold text-gray-900">Add Category</h1>
             <p className="text-gray-500">Dashboard &gt; category</p>
           </div>
 
-          <div className="bg-white rounded-lg p-6">
+          <div className="pt-10">
             <h2 className="text-lg font-semibold mb-6">General Information</h2>
 
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -74,7 +74,7 @@ export default function AddCategoryPage() {
                   placeholder="Type category name here..."
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="mt-1"
+                  className="mt-3 h-[50px] border border-[#707070]"
                 />
               </div>
 
@@ -85,7 +85,7 @@ export default function AddCategoryPage() {
                   placeholder="Type category description here..."
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="mt-1 min-h-[120px]"
+                  className="mt-1 min-h-[120px] border border-[#707070]"
                 />
               </div>
 

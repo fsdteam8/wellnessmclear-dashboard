@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Breadcrumb } from "@/components/breadcrumb"
+// import { Breadcrumb } from "@/components/breadcrumb"
 import { DataTable } from "@/components/data-table"
 
 const mockRevenueData = [
@@ -33,7 +33,7 @@ export default function RevenueFromSellerPage() {
 
       <div className="flex-1 overflow-auto">
         <div className="p-6">
-          <Breadcrumb items={[{ label: "Dashboard", href: "/" }, { label: "Revenue from Seller" }]} />
+          {/* <Breadcrumb items={[{ label: "Dashboard", href: "/" }, { label: "Revenue from Seller" }]} /> */}
 
           <div className="mb-6">
             <h1 className="text-2xl font-semibold text-gray-900">Revenue from Seller</h1>

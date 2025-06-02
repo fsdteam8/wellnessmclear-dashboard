@@ -3,7 +3,7 @@
 import type React from "react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Breadcrumb } from "@/components/breadcrumb";
+// import { Breadcrumb } from "@/components/breadcrumb";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -88,20 +88,20 @@ export default function AddCodePage() {
     <div className="flex h-screen">
       <div className="flex-1 overflow-auto">
         <div className="p-6">
-          <Breadcrumb
+          {/* <Breadcrumb
             items={[
               { label: "Dashboard", href: "/" },
               { label: "Promo Code", href: "/promo-code" }, // Updated breadcrumb
               { label: "Add Code" },
             ]}
-          />
+          /> */}
 
           <div className="mb-6 mt-4">
             <h1 className="text-2xl font-semibold text-gray-900">Add Code</h1>
             <p className="text-sm text-gray-500">Dashboard &gt; code</p>
           </div>
 
-          <div className="p-6">
+          <div className="">
             <form onSubmit={handleSubmit} className="space-y-8">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                 <div>
@@ -114,10 +114,11 @@ export default function AddCodePage() {
                   <Input
                     id="code"
                     value={formData.code}
+                    placeholder="e.g., ABC123"
                     onChange={(e) =>
                       setFormData({ ...formData, code: e.target.value })
                     }
-                    className="h-[60px]"
+                    className="h-[60px]  border-[1px] border-[#707070]"
                     maxLength={10}
                     minLength={5}
                   />
@@ -136,13 +137,14 @@ export default function AddCodePage() {
                     onChange={(e) =>
                       setFormData({ ...formData, discount: e.target.value })
                     }
-                    className="h-[60px]"
+                    className="h-[60px] border-[1px] border-[#707070]"
                     placeholder="e.g., $10 or 10%"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-6">
+                {/* Start Date */}
                 <div>
                   <Label
                     htmlFor="startDate"
@@ -153,9 +155,9 @@ export default function AddCodePage() {
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
-                        variant="outline"
+                        variant="ghost"
                         className={cn(
-                          "w-full justify-start text-left font-normal mt-3 h-[60px]",
+                          "w-full justify-start text-left font-normal border border-[#707070] rounded-md h-[60px]",
                           !formData.startDate && "text-muted-foreground"
                         )}
                       >
@@ -180,6 +182,7 @@ export default function AddCodePage() {
                   </Popover>
                 </div>
 
+                {/* Expiry Date */}
                 <div>
                   <Label
                     htmlFor="expiryDate"
@@ -190,9 +193,9 @@ export default function AddCodePage() {
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
-                        variant="outline"
+                        variant="ghost"
                         className={cn(
-                          "w-full justify-start text-left font-normal mt-1 h-[60px]",
+                          "w-full justify-start text-left font-normal border border-[#707070] rounded-md h-[60px]",
                           !formData.expiryDate && "text-muted-foreground"
                         )}
                       >
@@ -217,6 +220,7 @@ export default function AddCodePage() {
                   </Popover>
                 </div>
 
+                {/* Status */}
                 <div>
                   <Label
                     htmlFor="status"
@@ -230,8 +234,8 @@ export default function AddCodePage() {
                       setFormData({ ...formData, status: value })
                     }
                   >
-                    <SelectTrigger className="mt-1 h-[60px]">
-                      <SelectValue />
+                    <SelectTrigger className="h-[60px] border-[#707070] rounded-md">
+                      <SelectValue placeholder="Select status" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Active">Active</SelectItem>
@@ -246,7 +250,7 @@ export default function AddCodePage() {
                 <Button
                   type="submit"
                   disabled={isLoading}
-                  className="bg-slate-700 hover:bg-slate-800 text-white h-[60px]"
+                  className="bg-slate-700 hover:bg-slate-800 text-white h-[45px] w-[120px]"
                 >
                   <Save className="h-4 w-4 mr-2" />
                   {isLoading ? "Saving..." : "Save"}

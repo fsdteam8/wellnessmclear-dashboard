@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Breadcrumb } from "@/components/breadcrumb"
+// import { Breadcrumb } from "@/components/breadcrumb"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -58,13 +58,13 @@ export default function AddResourcePage() {
 
       <div className="flex-1 overflow-auto">
         <div className="p-6">
-          <Breadcrumb
+          {/* <Breadcrumb
             items={[
               { label: "Dashboard", href: "/" },
               { label: "resource List", href: "/resource-list" },
               { label: "add resource" },
             ]}
-          />
+          /> */}
 
           <div className="flex items-center justify-between mb-6">
             <div>
@@ -241,8 +241,8 @@ export default function AddResourcePage() {
 
               <div className="p-6">
                 <Label>Thumbnail</Label>
-                <Card className="mt-2">
-                  <CardContent className="p-6">
+                <Card className="mt-2 shadow-none">
+                  <CardContent className="p-6 bg-[#EDEEF1] border-none shadow-none">
                     <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
                       <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                       <p className="text-gray-500">Upload thumbnail</p>

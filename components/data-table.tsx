@@ -319,8 +319,8 @@ export function DataTable<T>({
       setDeleteItem(null)
       setIsDeleting(false)
     },
-    onError: (error) => {
-      console.error("Delete failed:", error)
+    onError: () => {
+      console.error("Delete failed:")
       setIsDeleting(false)
     },
   })

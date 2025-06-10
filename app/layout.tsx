@@ -2,7 +2,7 @@ import type React from "react";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { Toaster } from "@/components/ui/toaster";
+// import { Toaster } from "@/components/ui/toaster";
 // import { Button } from "@/components/ui/button"
 // import { Bell } from "lucide-react"
 import { Sidebar } from "@/components/sidebar";
@@ -32,7 +32,7 @@ export default function RootLayout({
             <div className="w-full mt-[60px] bg-[#EDEEF1]">{children}</div>
           </div>
 
-          <Toaster />
+          {/* <Toaster /> */}
         </AppProvider>
       </body>
     </html>

@@ -7,7 +7,7 @@ import { PageHeader } from "@/components/page-header"
 import { DataTable } from "@/components/data-table"
 import Image from "next/image"
 import type { Blog, BlogColumn } from "@/type/types"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 
 // Helper function to strip HTML tags and get plain text
 const stripHtml = (html: string): string => {
@@ -80,6 +80,11 @@ export default function BlogManagementPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
 
+  // Set up query client for cache invalidation
+  const queryClient = useQueryClient()
+  const token =
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2ODE0NGFiODkzNjg4NGU0OTY0MzhiNjQiLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE3NDkwMzY1NzQsImV4cCI6MTc0OTY0MTM3NH0.XyD7AImvYdvYPTkVMQr5WpGR1sDs4HjibnwKcBOSjQA"
+
   const {
     data: blogsResponse,
     isLoading,
@@ -92,6 +97,35 @@ export default function BlogManagementPage() {
         throw new Error("Failed to fetch blogs")
       }
       return res.json()
+    },
+  })
+
+  // Set up delete mutation with TanStack Query
+  const deleteMutation = useMutation({
+    mutationFn: async (blog: Blog) => {
+      const blogId = blog._id || blog.id
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/blog/${blogId}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || "Failed to delete blog")
+      }
+
+      return blogId
+    },
+    onSuccess: () => {
+      // Invalidate and refetch the data after successful deletion
+      queryClient.invalidateQueries({ queryKey: ["blog"] })
+    },
+    onError: (error) => {
+      console.error("Delete failed:", error)
+      // You can add toast notification here if you have one
     },
   })
 
@@ -117,9 +151,15 @@ export default function BlogManagementPage() {
     router.push(`/blog-management/edit/${blog._id}`)
   }
 
-  const handleDelete = (blog: Blog) => {
-    console.log("Delete blog:", blog)
-    // Add your delete logic here
+  const handleDelete = async (blog: Blog) => {
+    try {
+      await deleteMutation.mutateAsync(blog)
+      console.log("Blog deleted successfully:", blog.title)
+      // You can add toast notification here for success
+    } catch (error) {
+      console.error("Failed to delete blog:", error)
+      // You can add toast notification here for error
+    }
   }
 
   const handlePageChange = (page: number) => {
@@ -203,6 +243,7 @@ export default function BlogManagementPage() {
               onPageChange={handlePageChange}
               onEdit={handleEdit}
               onDelete={handleDelete}
+              isDeleting={deleteMutation.isPending}
             />
           )}
         </div>

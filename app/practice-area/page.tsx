@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -6,8 +7,9 @@ import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
 import { DataTable } from "@/components/data-table";
 import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/hooks/use-toast";
-import { useQuery } from "@tanstack/react-query";
+// import { useToast } from "@/hooks/use-toast";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 interface PracticeArea {
   _id: string;
@@ -27,12 +29,12 @@ const columns: Column[] = [
     key: "name",
     label: "Name",
     render: (value, row) => (
-      <Link href={`/categories/${row._id}`} passHref>
+      <Link href={`/practice-area/${row._id}`} passHref>
         <Badge
           variant="secondary"
-          className="bg-slate-600 text-white px-4 py-2 cursor-pointer hover:bg-slate-500 transition-colors"
+          className="bg-slate-600 text-white px-4 py-2 cursor-pointer hover:bg-slate-500 transition-colors w-[200px]"
         >
-          {value as string}
+          {(value as string).slice(0, 20)}
         </Badge>
       </Link>
     ),
@@ -49,15 +51,20 @@ const columns: Column[] = [
   },
   {
     key: "description",
-    label: "List Of Sub_categories",
+    label: "Description",
   },
 ];
 
 export default function CategoriesPage() {
   const router = useRouter();
-  const { toast } = useToast();
+  // const { toast } = useToast();
   const [currentPage, setCurrentPage] = useState<number>(1);
   const itemsPerPage = 10;
+  const TOKEN =
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2ODE0NGFiODkzNjg4NGU0OTY0MzhiNjQiLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE3NDk2MjM3NzQsImV4cCI6MTc1MDIyODU3NH0.sSDAQEhRI6ii7oG05O2mYYaxZoXxFfj0tk52ErnpmSs"
+
+  // Set up query client for cache invalidation
+  const queryClient = useQueryClient();
 
   const {
     data,
@@ -83,6 +90,49 @@ export default function CategoriesPage() {
     },
   });
 
+  // Set up delete mutation with TanStack Query
+  const deleteMutation = useMutation({
+    mutationFn: async (practiceArea: PracticeArea) => {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/practice-area/${practiceArea._id}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            // Add authorization header if needed
+            Authorization: `Bearer ${TOKEN}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to delete practice area");
+      }
+
+      return practiceArea._id;
+    },
+    onSuccess: () => {
+      // Invalidate and refetch the data after successful deletion
+      queryClient.invalidateQueries({ queryKey: ["practice-data"] });
+      
+      // toast({
+      //   title: "Success",
+      //   description: `Practice area "${deletedPracticeArea.name}" deleted successfully`,
+      // });
+      toast.success("Practice area  deleted successfully!")
+    },
+    onError: (error) => {
+      console.error("Delete failed:", error);
+      // toast({
+      //   title: "Error",
+      //   description: `Failed to delete practice area "${deletedPracticeArea.name}". ${error.message}`,
+      //   variant: "destructive",
+      // });
+      toast.error(error.message)
+    },
+  });
+
   const totalItems = data?.length ?? 0;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   const currentData = data?.slice(
@@ -93,33 +143,20 @@ export default function CategoriesPage() {
   const isEmpty = !isLoading && !isError && totalItems === 0;
 
   const handleAddCategory = () => {
-    router.push("/categories/add");
+    router.push("/practice-area/add");
   };
 
   const handleEdit = (category: PracticeArea) => {
-    router.push(`/categories/edit/${category._id}`);
+    router.push(`/practice-area/edit/${category._id}`);
   };
 
   const handleDelete = async (category: PracticeArea) => {
-    if (
-      confirm(
-        `Are you sure you want to delete the category "${category.name}"? This will also delete all subcategories.`
-      )
-    ) {
-      try {
-        await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulated delete
-        toast({
-          title: "Success",
-          description: "Category deleted successfully",
-        });
-        // Use queryClient.invalidateQueries if needed
-      } catch {
-        toast({
-          title: "Error",
-          description: "Failed to delete category",
-          variant: "destructive",
-        });
-      }
+    try {
+      await deleteMutation.mutateAsync(category);
+      console.log("Practice area deleted successfully:", category.name);
+    } catch (error) {
+      console.error("Failed to delete practice area:", error);
+      // Error is already handled in the mutation's onError callback
     }
   };
 
@@ -130,7 +167,7 @@ export default function CategoriesPage() {
           <div className="mb-10">
             <PageHeader
               onButtonClick={handleAddCategory}
-              title="Practice Areas"
+              title="Practice Areas List"
               buttonText="Add Practice Area"
             />
             <p className="text-gray-500 -mt-4">Dashboard &gt; Practice_Areas</p>
@@ -161,6 +198,7 @@ export default function CategoriesPage() {
               onPageChange={setCurrentPage}
               onEdit={handleEdit}
               onDelete={handleDelete}
+              isDeleting={deleteMutation.isPending}
             />
           )}
         </div>

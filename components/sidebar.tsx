@@ -42,7 +42,7 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <div className="flex h-screen sticky bottom-0 top-0 w-[350px] flex-col bg-slate-700 z-50">
+    <div className="flex h-screen sticky bottom-0 top-0 w-[350px] flex-col bg-[#393C50] z-50">
       <div className="h-[80px] px-4 py-3">
         <Image
           src="/images/authImg.svg"
@@ -54,29 +54,30 @@ export function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 space-y-4 px-3 py-10 overflow-hidden">
-        {navigation.map((item) => {
-          const isActive =
-            pathname === item.href ||
-            (item.href !== "/" && pathname.startsWith(item.href));
+      <nav className="flex-1 space-y-4 px-3 lg:py-10 overflow-hidden">
+  {navigation.map((item) => {
+    const isActive =
+      pathname === item.href ||
+      (item.href !== "/" && pathname.startsWith(item.href));
 
-          return (
-            <Link
-              key={item.name}
-              href={item.href}
-              className={cn(
-                "flex items-center space-x-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                isActive
-                  ? "text-yellow-400 hover:bg-slate-600 hover:text-white"
-                  : "text-slate-300 hover:bg-slate-600 hover:text-white"
-              )}
-            >
-              <item.icon className="h-5 w-5" />
-              <span>{item.name}</span>
-            </Link>
-          );
-        })}
-      </nav>
+    return (
+      <Link
+        key={item.name}
+        href={item.href}
+        className={cn(
+          "flex items-center space-x-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+          isActive
+            ? "text-yellow-400 hover:bg-slate-600 hover:text-white"
+            : "text-slate-300 hover:bg-slate-600 hover:text-white"
+        )}
+      >
+        <item.icon className="h-5 w-5" />
+        <span>{item.name}</span>
+      </Link>
+    );
+  })}
+</nav>
+
 
       {/* Logout */}
       <div className="p-3">

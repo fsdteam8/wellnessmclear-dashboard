@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Breadcrumb } from "@/components/breadcrumb"
+// import { Breadcrumb } from "@/components/breadcrumb"
 import { PageHeader } from "@/components/page-header"
 import { DataTable } from "@/components/data-table"
 import Image from "next/image"
@@ -154,9 +154,18 @@ export default function ResourceListPage() {
 
       <div className="flex-1 overflow-auto">
         <div className="p-6">
-          <Breadcrumb items={[{ label: "Dashboard", href: "/" }, { label: "resource List" }]} />
+          {/* <Breadcrumb items={[{ label: "Dashboard", href: "/" }, { label: "resource List" }]} /> */}
 
-          <PageHeader title="Resource List" buttonText="Add Resource" onButtonClick={handleAddResource} />
+          <div className="mb-10">
+            <PageHeader
+              onButtonClick={handleAddResource}
+              title="Resource List"
+              buttonText="Add Resource"
+            />
+            <p className="text-gray-500 -mt-4">Dashboard &gt; resource List</p>
+          </div>
+
+          {/* <PageHeader title="Resource List" buttonText="Add Resource" onButtonClick={handleAddResource} /> */}
 
           <DataTable
             columns={columns}

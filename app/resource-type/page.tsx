@@ -1,42 +1,37 @@
-
 "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-// import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
 import { DataTable } from "@/components/data-table";
 import { Badge } from "@/components/ui/badge";
-// import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
-interface PracticeArea {
+interface ResourceType {
   _id: string;
-  name: string;
+  resourceTypeName: string;
   description: string;
   createdAt: string;
 }
 
 interface Column {
-  key: keyof PracticeArea;
+  key: keyof ResourceType;
   label: string;
-  render?: (value: unknown, row: PracticeArea) => React.ReactNode;
+  render?: (value: unknown, row: ResourceType) => React.ReactNode;
 }
 
 const columns: Column[] = [
   {
-    key: "name",
+    key: "resourceTypeName",
     label: "Name",
     render: (value) => (
-      // <Link href={`/practice-area/${row._id}`} passHref>
-        <Badge
-          variant="secondary"
-          className="bg-slate-600 text-white px-4 py-2 cursor-pointer hover:bg-slate-500 transition-colors w-[200px]"
-        >
-          {(value as string).slice(0, 20)}
-        </Badge>
-      // </Link>
+      <Badge
+        variant="secondary"
+        className="bg-slate-600 text-white px-4 py-2 cursor-pointer hover:bg-slate-500 transition-colors w-[200px]"
+      >
+        {(value as string)?.slice(0, 20)}
+      </Badge>
     ),
   },
   {
@@ -55,26 +50,25 @@ const columns: Column[] = [
   },
 ];
 
-export default function CategoriesPage() {
+export default function ResourceTypePage() {
   const router = useRouter();
-  // const { toast } = useToast();
   const [currentPage, setCurrentPage] = useState<number>(1);
   const itemsPerPage = 10;
-  const TOKEN =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2ODE0NGFiODkzNjg4NGU0OTY0MzhiNjQiLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE3NDk2MjM3NzQsImV4cCI6MTc1MDIyODU3NH0.sSDAQEhRI6ii7oG05O2mYYaxZoXxFfj0tk52ErnpmSs"
 
-  // Set up query client for cache invalidation
+  const TOKEN =
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2ODE0NGFiODkzNjg4NGU0OTY0MzhiNjQiLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE3NDk2MjM3NzQsImV4cCI6MTc1MDIyODU3NH0.sSDAQEhRI6ii7oG05O2mYYaxZoXxFfj0tk52ErnpmSs";
+
   const queryClient = useQueryClient();
 
   const {
     data,
     isLoading,
     isError,
-  } = useQuery<PracticeArea[]>({
-    queryKey: ["practice-data"],
+  } = useQuery<ResourceType[]>({
+    queryKey: ["resource-data"],
     queryFn: async () => {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/practice-area/all`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/resource-type/all`,
         {
           method: "GET",
           headers: {
@@ -83,24 +77,23 @@ export default function CategoriesPage() {
         }
       );
       if (!res.ok) {
-        throw new Error("Failed to fetch practice area data");
+        throw new Error("Failed to fetch resource type data");
       }
       const json = await res.json();
-      return json.data as PracticeArea[];
+      return json.data as ResourceType[];
     },
   });
 
-  console.log("data", data)
-  // Set up delete mutation with TanStack Query
+  console.log("resourceType", data);
+
   const deleteMutation = useMutation({
-    mutationFn: async (practiceArea: PracticeArea) => {
+    mutationFn: async (resource: ResourceType) => {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/practice-area/${practiceArea._id}`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/resource-type/${resource._id}`,
         {
           method: "DELETE",
           headers: {
             "Content-Type": "application/json",
-            // Add authorization header if needed
             Authorization: `Bearer ${TOKEN}`,
           },
         }
@@ -108,29 +101,18 @@ export default function CategoriesPage() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || "Failed to delete practice area");
+        throw new Error(errorData.message || "Failed to delete resource type");
       }
 
-      return practiceArea._id;
+      return resource._id;
     },
     onSuccess: () => {
-      // Invalidate and refetch the data after successful deletion
-      queryClient.invalidateQueries({ queryKey: ["practice-data"] });
-      
-      // toast({
-      //   title: "Success",
-      //   description: `Practice area "${deletedPracticeArea.name}" deleted successfully`,
-      // });
-      toast.success("Practice area  deleted successfully!")
+      queryClient.invalidateQueries({ queryKey: ["resource-data"] });
+      toast.success("Resource type deleted successfully!");
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       console.error("Delete failed:", error);
-      // toast({
-      //   title: "Error",
-      //   description: `Failed to delete practice area "${deletedPracticeArea.name}". ${error.message}`,
-      //   variant: "destructive",
-      // });
-      toast.error(error.message)
+      toast.error(error.message);
     },
   });
 
@@ -143,21 +125,20 @@ export default function CategoriesPage() {
 
   const isEmpty = !isLoading && !isError && totalItems === 0;
 
-  const handleAddCategory = () => {
-    router.push("/practice-area/add");
+  const handleAddResource = () => {
+    router.push("/resource-type/add");
   };
 
-  const handleEdit = (category: PracticeArea) => {
-    router.push(`/practice-area/edit/${category._id}`);
+  const handleEdit = (resource: ResourceType) => {
+    router.push(`/resource-type/edit/${resource._id}`);
   };
 
-  const handleDelete = async (category: PracticeArea) => {
+  const handleDelete = async (resource: ResourceType) => {
     try {
-      await deleteMutation.mutateAsync(category);
-      console.log("Practice area deleted successfully:", category.name);
+      await deleteMutation.mutateAsync(resource);
+      console.log("Resource type deleted successfully:", resource.resourceTypeName);
     } catch (error) {
-      console.error("Failed to delete practice area:", error);
-      // Error is already handled in the mutation's onError callback
+      console.error("Failed to delete resource type:", error);
     }
   };
 
@@ -167,11 +148,11 @@ export default function CategoriesPage() {
         <div className="p-6 bg-[#EDEEF1]">
           <div className="mb-10">
             <PageHeader
-              onButtonClick={handleAddCategory}
-              title="Practice Areas List"
-              buttonText="Add Practice Area"
+              onButtonClick={handleAddResource}
+              title="Resource Types List"
+              buttonText="Add Resource Type"
             />
-            <p className="text-gray-500 -mt-4">Dashboard &gt; Practice_Areas_List</p>
+            <p className="text-gray-500 -mt-4">Dashboard &gt; Resource_Types_List</p>
           </div>
 
           {isLoading ? (
@@ -186,7 +167,7 @@ export default function CategoriesPage() {
             </div>
           ) : isEmpty ? (
             <div className="text-gray-500 text-center font-medium">
-              No practice areas found.
+              No resource types found.
             </div>
           ) : (
             <DataTable

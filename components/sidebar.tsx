@@ -22,6 +22,7 @@ import Image from "next/image";
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Practice Areas", href: "/practice-area", icon: Tag },
+  { name: "Resource Types", href: "/resource-type", icon: Tag },
   { name: "Promo Code", href: "/promo-code", icon: Ticket },
   { name: "Resource List", href: "/resource-list", icon: List },
   { name: "Request Resource", href: "/request-resource", icon: FileText },

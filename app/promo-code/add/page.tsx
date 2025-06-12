@@ -3,7 +3,7 @@
 import type React from "react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-// import { Breadcrumb } from "@/components/breadcrumb";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,239 +25,320 @@ import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
+// Types
+type PromoCodeFormData = {
+  code: string;
+  discountType: "Percentage" | "Fixed";
+  discountValue: number;
+  expiryDate: Date | undefined;
+  usageLimit: number;
+  active: boolean;
+};
+
+type ApiResponse = {
+  status: boolean;
+  message: string;
+  data?: Record<string, unknown>; // Instead of `any`
+};
+
+// API function to create promo code
+const createPromoCode = async (
+  data: PromoCodeFormData
+): Promise<ApiResponse> => {
+  const payload = {
+    code: data.code,
+    discountType: data.discountType,
+    discountValue: data.discountValue,
+    expiryDate: data.expiryDate?.toISOString(),
+    usageLimit: data.usageLimit,
+    active: data.active,
+  };
+
+  const TOKEN =
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2ODE0NGFiODkzNjg4NGU0OTY0MzhiNjQiLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE3NDk2MjM3NzQsImV4cCI6MTc1MDIyODU3NH0.sSDAQEhRI6ii7oG05O2mYYaxZoXxFfj0tk52ErnpmSs";
+
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/promo-codes`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${TOKEN}`,
+      },
+      body: JSON.stringify(payload),
+    }
+  );
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || "Failed to create promo code");
+  }
+
+  return response.json();
+};
+
 export default function AddCodePage() {
   const router = useRouter();
   const { toast } = useToast();
-  const [formData, setFormData] = useState({
+  const queryClient = useQueryClient();
+
+  const [formData, setFormData] = useState<PromoCodeFormData>({
     code: "",
-    discount: "",
-    startDate: undefined as Date | undefined,
-    expiryDate: undefined as Date | undefined,
-    status: "Active",
+    discountType: "Percentage",
+    discountValue: 0,
+    expiryDate: undefined,
+    usageLimit: 100,
+    active: true,
   });
-  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const [discountInput, setDiscountInput] = useState("");
 
-    if (
-      !formData.code.trim() ||
-      !formData.discount.trim() ||
-      !formData.startDate ||
-      !formData.expiryDate
-    ) {
-      toast({
-        title: "Error",
-        description: "All fields are required",
-        variant: "destructive",
-      });
-      return;
-    }
+  const createMutation = useMutation({
+    mutationFn: createPromoCode,
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["promoCodes"] });
 
-    if (formData.code.length < 5 || formData.code.length > 10) {
-      toast({
-        title: "Error",
-        description: "Code must be between 5 and 10 characters",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!/^[a-zA-Z0-9]+$/.test(formData.code)) {
-      toast({
-        title: "Error",
-        description: "Code must be alphanumeric",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsLoading(true);
-
-    // Simulate API call
-    setTimeout(() => {
       toast({
         title: "Success",
-        description: "Promo code created successfully",
+        description: data.message || "Promo code created successfully",
       });
+
       router.push("/promo-code");
-    }, 1000);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create promo code",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const validateForm = (): string | null => {
+    if (!formData.code.trim()) return "Code is required";
+
+    if (formData.code.length < 3 || formData.code.length > 20)
+      return "Code must be between 3 and 20 characters";
+
+    if (!/^[a-zA-Z0-9]+$/.test(formData.code))
+      return "Code must be alphanumeric";
+
+    if (!discountInput.trim()) return "Discount is required";
+
+    if (formData.discountValue <= 0)
+      return "Discount value must be greater than 0";
+
+    if (
+      formData.discountType === "Percentage" &&
+      formData.discountValue > 100
+    )
+      return "Percentage discount cannot exceed 100%";
+
+    if (!formData.expiryDate) return "Expiry date is required";
+
+    if (formData.expiryDate <= new Date())
+      return "Expiry date must be in the future";
+
+    if (formData.usageLimit <= 0)
+      return "Usage limit must be greater than 0";
+
+    return null;
   };
+
+  const handleDiscountChange = (value: string) => {
+    setDiscountInput(value);
+    const numericValue = parseFloat(value.replace(/[^0-9.]/g, ""));
+
+    if (!isNaN(numericValue)) {
+      const isPercentage = value.includes("%");
+      setFormData((prev) => ({
+        ...prev,
+        discountType: isPercentage ? "Percentage" : "Fixed",
+        discountValue: numericValue,
+      }));
+    }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const validationError = validateForm();
+    if (validationError) {
+      toast({
+        title: "Validation Error",
+        description: validationError,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    createMutation.mutate(formData);
+  };
+
+  const handleCancel = () => router.push("/promo-code");
 
   return (
     <div className="flex h-screen">
       <div className="flex-1 overflow-auto">
         <div className="p-6">
-          {/* <Breadcrumb
-            items={[
-              { label: "Dashboard", href: "/" },
-              { label: "Promo Code", href: "/promo-code" }, // Updated breadcrumb
-              { label: "Add Code" },
-            ]}
-          /> */}
-
           <div className="mb-6 mt-4">
             <h1 className="text-2xl font-semibold text-gray-900">Add Code</h1>
-            <p className="text-sm text-gray-500">Dashboard &gt; code</p>
+            <p className="text-sm text-gray-500">
+              Dashboard &gt; Code &gt; Add Code
+            </p>
           </div>
 
-          <div className="">
-            <form onSubmit={handleSubmit} className="space-y-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-                <div>
-                  <Label
-                    htmlFor="code"
-                    className="block text-base font-medium text-black mb-3"
-                  >
-                    Code (5-10 chars, alphanumeric)
-                  </Label>
-                  <Input
-                    id="code"
-                    value={formData.code}
-                    placeholder="e.g., ABC123"
-                    onChange={(e) =>
-                      setFormData({ ...formData, code: e.target.value })
-                    }
-                    className="h-[60px]  border-[1px] border-[#707070]"
-                    maxLength={10}
-                    minLength={5}
-                  />
-                </div>
-
-                <div>
-                  <Label
-                    htmlFor="discount"
-                    className="block text-base font-medium text-black mb-3"
-                  >
-                    Discount
-                  </Label>
-                  <Input
-                    id="discount"
-                    value={formData.discount}
-                    onChange={(e) =>
-                      setFormData({ ...formData, discount: e.target.value })
-                    }
-                    className="h-[60px] border-[1px] border-[#707070]"
-                    placeholder="e.g., $10 or 10%"
-                  />
-                </div>
+          <form onSubmit={handleSubmit} className="space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+              <div>
+                <Label htmlFor="code" className="block text-base font-medium text-black mb-3">
+                  Code (3-20 chars, alphanumeric) *
+                </Label>
+                <Input
+                  id="code"
+                  value={formData.code}
+                  placeholder="e.g., SUMMER50"
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      code: e.target.value.toUpperCase(),
+                    })
+                  }
+                  className="h-[60px] border-[1px] border-[#707070]"
+                  maxLength={20}
+                  disabled={createMutation.isPending}
+                />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-6">
-                {/* Start Date */}
-                <div>
-                  <Label
-                    htmlFor="startDate"
-                    className="block text-base font-medium text-black mb-3"
-                  >
-                    Start Date
-                  </Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        className={cn(
-                          "w-full justify-start text-left font-normal border border-[#707070] rounded-md h-[60px]",
-                          !formData.startDate && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {formData.startDate ? (
-                          format(formData.startDate, "dd / MM / yyyy")
-                        ) : (
-                          <span>DD / MM / YYYY</span>
-                        )}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar
-                        mode="single"
-                        selected={formData.startDate}
-                        onSelect={(date) =>
-                          setFormData({ ...formData, startDate: date })
-                        }
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
+              <div>
+                <Label htmlFor="discount" className="block text-base font-medium text-black mb-3">
+                  Discount *
+                </Label>
+                <Input
+                  id="discount"
+                  value={discountInput}
+                  onChange={(e) => handleDiscountChange(e.target.value)}
+                  className="h-[60px] border-[1px] border-[#707070]"
+                  placeholder="e.g., 50% or 10"
+                  disabled={createMutation.isPending}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Type: {formData.discountType} | Value: {formData.discountValue}
+                </p>
+              </div>
+            </div>
 
-                {/* Expiry Date */}
-                <div>
-                  <Label
-                    htmlFor="expiryDate"
-                    className="block text-base font-medium text-black mb-3"
-                  >
-                    Expiry Date
-                  </Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        className={cn(
-                          "w-full justify-start text-left font-normal border border-[#707070] rounded-md h-[60px]",
-                          !formData.expiryDate && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {formData.expiryDate ? (
-                          format(formData.expiryDate, "dd / MM / yyyy")
-                        ) : (
-                          <span>DD / MM / YYYY</span>
-                        )}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar
-                        mode="single"
-                        selected={formData.expiryDate}
-                        onSelect={(date) =>
-                          setFormData({ ...formData, expiryDate: date })
-                        }
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-
-                {/* Status */}
-                <div>
-                  <Label
-                    htmlFor="status"
-                    className="block text-base font-medium text-black mb-3"
-                  >
-                    Status
-                  </Label>
-                  <Select
-                    value={formData.status}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, status: value })
-                    }
-                  >
-                    <SelectTrigger className="h-[60px] border-[#707070] rounded-md">
-                      <SelectValue placeholder="Select status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Active">Active</SelectItem>
-                      <SelectItem value="Schedule">Schedule</SelectItem>
-                      <SelectItem value="Inactive">Inactive</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-6">
+              <div>
+                <Label htmlFor="expiryDate" className="block text-base font-medium text-black mb-3">
+                  Expiry Date *
+                </Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      className={cn(
+                        "w-full justify-start text-left font-normal border border-[#707070] rounded-md h-[60px]",
+                        !formData.expiryDate && "text-muted-foreground"
+                      )}
+                      disabled={createMutation.isPending}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {formData.expiryDate ? (
+                        format(formData.expiryDate, "dd / MM / yyyy")
+                      ) : (
+                        <span>DD / MM / YYYY</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={formData.expiryDate}
+                      onSelect={(date) =>
+                        setFormData({ ...formData, expiryDate: date })
+                      }
+                      disabled={(date) => date < new Date()}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
 
-              <div className="flex justify-end pt-4">
-                <Button
-                  type="submit"
-                  disabled={isLoading}
-                  className="bg-slate-700 hover:bg-slate-800 text-white h-[45px] w-[120px]"
+              <div>
+                <Label htmlFor="usageLimit" className="block text-base font-medium text-black mb-3">
+                  Usage Limit *
+                </Label>
+                <Input
+                  id="usageLimit"
+                  type="number"
+                  value={formData.usageLimit}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      usageLimit: parseInt(e.target.value) || 0,
+                    })
+                  }
+                  className="h-[60px] border-[1px] border-[#707070]"
+                  placeholder="100"
+                  min="1"
+                  disabled={createMutation.isPending}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="status" className="block text-base font-medium text-black mb-3">
+                  Status
+                </Label>
+                <Select
+                  value={formData.active ? "Active" : "Inactive"}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, active: value === "Active" })
+                  }
+                  disabled={createMutation.isPending}
                 >
-                  <Save className="h-4 w-4 mr-2" />
-                  {isLoading ? "Saving..." : "Save"}
-                </Button>
+                  <SelectTrigger className="h-[60px] border-[#707070] rounded-md">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Active">Active</SelectItem>
+                    <SelectItem value="Inactive">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-            </form>
-          </div>
+            </div>
+
+            <div className="flex justify-end gap-4 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleCancel}
+                disabled={createMutation.isPending}
+                className="h-[45px] w-[120px]"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={createMutation.isPending}
+                className="bg-slate-700 hover:bg-slate-800 text-white h-[45px] w-[120px]"
+              >
+                <Save className="h-4 w-4 mr-2" />
+                {createMutation.isPending ? "Saving..." : "Save"}
+              </Button>
+            </div>
+          </form>
+
+          {createMutation.isPending && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white p-6 rounded-lg shadow-lg">
+                <div className="flex items-center space-x-4">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-700"></div>
+                  <span className="text-lg font-medium">Creating promo code...</span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

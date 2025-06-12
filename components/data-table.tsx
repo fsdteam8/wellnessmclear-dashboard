@@ -1,13 +1,28 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 import { useState } from "react"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight, Edit, Trash2 } from "lucide-react"
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog"
 
+interface Column<T> {
+  key: keyof T | string
+  label: string
+  width?: string
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  render?: (value: any, row: T) => React.ReactNode
+}
+
 interface DataTableProps<T> {
-  columns: any[]
+  columns: Column<T>[]
   data: T[]
   currentPage: number
   totalPages: number
@@ -16,7 +31,7 @@ interface DataTableProps<T> {
   onPageChange: (page: number) => void
   onEdit?: (item: T) => void
   onDelete?: (item: T) => void
-  isDeleting?: boolean // Add prop to show loading state from parent
+  isDeleting?: boolean
 }
 
 export function DataTable<T>({
@@ -34,41 +49,39 @@ export function DataTable<T>({
   const startItem = (currentPage - 1) * itemsPerPage + 1
   const endItem = Math.min(currentPage * itemsPerPage, totalItems)
 
-  // Only handle UI state for delete confirmation dialog
   const [deleteItem, setDeleteItem] = useState<T | null>(null)
 
-  // Handle delete button click - show confirmation dialog
   const handleDeleteClick = (item: T) => {
     setDeleteItem(item)
   }
 
-  // Handle delete confirmation - delegate to parent
   const handleDeleteConfirm = async () => {
     if (deleteItem && onDelete) {
       onDelete(deleteItem)
-      setDeleteItem(null) // Close dialog after confirming
+      setDeleteItem(null)
     }
   }
 
-  // Handle delete cancellation
   const handleDeleteCancel = () => {
     setDeleteItem(null)
   }
 
-  // Get the name of the item for display in dialog (works for both Blog and PracticeArea)
   const getItemName = (item: T): string => {
     if (item && typeof item === 'object') {
-      const obj = item as any
-      return obj.name || obj.title || 'item'
+      const obj = item as Record<string, any>
+      if (obj?.code) return `promo code "${obj.code}"`
+      return obj?.name || obj?.title || 'item'
     }
     return 'item'
   }
+
 
   const renderPaginationButtons = () => {
     const buttons = []
     const maxVisiblePages = 5
 
-    // Previous button
+    if (totalPages <= 1) return []
+
     buttons.push(
       <Button
         key="prev"
@@ -79,10 +92,9 @@ export function DataTable<T>({
         className="mr-1"
       >
         <ChevronLeft className="h-4 w-4" />
-      </Button>,
+      </Button>
     )
 
-    // Page numbers
     let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2))
     const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1)
 
@@ -100,27 +112,23 @@ export function DataTable<T>({
           className="mx-1"
         >
           {i}
-        </Button>,
+        </Button>
       )
     }
 
-    // Show ellipsis and last page if needed
     if (endPage < totalPages) {
       if (endPage < totalPages - 1) {
         buttons.push(
-          <span key="ellipsis" className="mx-2">
-            ...
-          </span>,
+          <span key="ellipsis" className="mx-2">...</span>
         )
       }
       buttons.push(
         <Button key={totalPages} variant="outline" size="sm" onClick={() => onPageChange(totalPages)} className="mx-1">
           {totalPages}
-        </Button>,
+        </Button>
       )
     }
 
-    // Next button
     buttons.push(
       <Button
         key="next"
@@ -131,7 +139,7 @@ export function DataTable<T>({
         className="ml-1"
       >
         <ChevronRight className="h-4 w-4" />
-      </Button>,
+      </Button>
     )
 
     return buttons
@@ -144,7 +152,7 @@ export function DataTable<T>({
           <TableHeader>
             <TableRow className="border border-[#707070]">
               {columns.map((column) => (
-                <TableHead key={column.key} className="font-semibold text-gray-900 text-left px-4 py-2">
+                <TableHead key={typeof column.key === "symbol" ? column.key.toString() : String(column.key)} className="font-semibold text-gray-900 text-left px-4 py-2">
                   {column.label}
                 </TableHead>
               ))}
@@ -154,62 +162,81 @@ export function DataTable<T>({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {data.map((row, index) => (
-              <TableRow key={index} className="hover:bg-gray-50 border border-[#707070]">
-                {columns.map((column) => (
-                  <TableCell
-                    key={column.key}
-                    className="text-left px-4 py-5 whitespace-nowrap"
-                    style={{ width: column.width || "auto" }}
-                  >
-                    {column.render ? column.render((row as any)[column.key], row) : String((row as any)[column.key])}
-                  </TableCell>
-                ))}
-
-                {(onEdit || onDelete) && (
-                  <TableCell className="text-center px-4 py-2">
-                    <div className="flex justify-center items-center space-x-2">
-                      {onEdit && (
-                        <Button className="" variant="ghost" size="sm" onClick={() => onEdit(row)} disabled={isDeleting}>
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                      )}
-                      {onDelete && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeleteClick(row)}
-                          disabled={isDeleting}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </TableCell>
-                )}
+            {data.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={columns.length + (onEdit || onDelete ? 1 : 0)} className="text-center py-8 text-gray-500">
+                  No data available
+                </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              data.map((row, index) => (
+                <TableRow key={index} className="hover:bg-gray-50 border border-[#707070]">
+                  {columns.map((column) => (
+                    <TableCell
+                      key={typeof column.key === "symbol" ? column.key.toString() : column.key}
+                      className="text-left px-4 py-5 whitespace-nowrap"
+                      style={{ width: column.width || "auto" }}
+                    >
+                      {column.render ? column.render(row[column.key as keyof T], row) : String(row[column.key as keyof T])}
+                    </TableCell>
+                  ))}
+
+                  {(onEdit || onDelete) && (
+                    <TableCell className="text-center px-4 py-2">
+                      <div className="flex justify-center items-center space-x-2">
+                        {onEdit && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => onEdit(row)}
+                            disabled={isDeleting}
+                            title="Edit"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        )}
+                        {onDelete && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteClick(row)}
+                            disabled={isDeleting}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            title="Delete"
+                          >
+                            {isDeleting ? (
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600"></div>
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
+                            )}
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  )}
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </div>
 
-      {/* Pagination UI */}
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-700">
-          Showing <span className="font-medium">{startItem}</span> to <span className="font-medium">{endItem}</span> of{" "}
-          <span className="font-medium">{totalItems}</span> results
-        </p>
-        <div className="flex items-center space-x-2">{renderPaginationButtons()}</div>
-      </div>
+      {totalItems > 0 && (
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-gray-700">
+            Showing <span className="font-medium">{startItem}</span> to <span className="font-medium">{endItem}</span> of{" "}
+            <span className="font-medium">{totalItems}</span> results
+          </p>
+          <div className="flex items-center space-x-2">{renderPaginationButtons()}</div>
+        </div>
+      )}
 
-      {/* Delete Confirmation Dialog */}
       <DeleteConfirmationDialog
         isOpen={!!deleteItem}
         onClose={handleDeleteCancel}
         onConfirm={handleDeleteConfirm}
         title="Delete Item"
-        description={`Are you sure you want to delete "${deleteItem ? getItemName(deleteItem) : 'this item'}"? This action cannot be undone.`}
+        description={`Are you sure you want to delete ${deleteItem ? getItemName(deleteItem) : 'this item'}? This action cannot be undone.`}
         isLoading={isDeleting}
       />
     </div>

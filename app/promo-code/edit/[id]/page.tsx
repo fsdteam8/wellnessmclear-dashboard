@@ -30,8 +30,8 @@ import { cn } from "@/lib/utils";
 type PromoCodeFormData = {
   code: string;
   discount: number;
-  startDate: Date | undefined;
   expiryDate: Date | undefined;
+  usageLimit: number;
   status: "Active" | "Inactive";
 };
 
@@ -65,16 +65,12 @@ const createSafeDate = (dateString: string): Date | undefined => {
 
 // API Functions
 const fetchPromoCode = async (id: string): Promise<ApiResponse> => {
-  // const TOKEN =
-  //   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2ODE0NGFiODkzNjg4NGU0OTY0MzhiNjQiLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE3NDk2MjM3NzQsImV4cCI6MTc1MDIyODU3NH0.sSDAQEhRI6ii7oG05O2mYYaxZoXxFfj0tk52ErnpmSs";
-
   console.log(`Fetching promo code with ID: ${id}`);
   
   const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/promo-codes/${id}`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
-      // Authorization: `Bearer ${TOKEN}`, // Added authorization header
     },
   });
 
@@ -98,8 +94,8 @@ const updatePromoCode = async (
   const payload = {
     code: data.code,
     discountValue: data.discount,
-    startDate: data.startDate?.toISOString(),
     expiryDate: data.expiryDate?.toISOString(),
+    usageLimit: data.usageLimit,
     active: data.status === "Active",
   };
 
@@ -109,7 +105,7 @@ const updatePromoCode = async (
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2ODE0NGFiODkzNjg4NGU0OTY0MzhiNjQiLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE3NDk2MjM3NzQsImV4cCI6MTc1MDIyODU3NH0.sSDAQEhRI6ii7oG05O2mYYaxZoXxFfj0tk52ErnpmSs";
 
   const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/promo-codes/${id}`, {
-    method: "PUT", // Changed from PUT to PATCH for partial updates
+    method: "PUT",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${TOKEN}`,
@@ -140,8 +136,8 @@ export default function EditCodePage() {
   const [formData, setFormData] = useState<PromoCodeFormData>({
     code: "",
     discount: 0,
-    startDate: undefined,
     expiryDate: undefined,
+    usageLimit: 100,
     status: "Active",
   });
   const [isLoadingData, setIsLoadingData] = useState(true);
@@ -155,7 +151,6 @@ export default function EditCodePage() {
     },
     onSuccess: (data) => {
       console.log('Update successful:', data);
-      // Invalidate promo codes query to refetch the list
       queryClient.invalidateQueries({ queryKey: ["promoCodes"] });
 
       toast({
@@ -163,7 +158,6 @@ export default function EditCodePage() {
         description: data.message || "Promo code updated successfully",
       });
 
-      // Navigate back to promo codes list
       router.push("/promo-code");
     },
     onError: (error: Error) => {
@@ -195,29 +189,23 @@ export default function EditCodePage() {
         if (response.status && response.data) {
           const promoCode = response.data;
           
-          // Safely create Date objects with validation
-          const startDate = createSafeDate(promoCode.startDate);
           const expiryDate = createSafeDate(promoCode.expiryDate);
 
-          // Log the original date strings for debugging
-          console.log("Original startDate:", promoCode.startDate);
           console.log("Original expiryDate:", promoCode.expiryDate);
-          console.log("Parsed startDate:", startDate);
           console.log("Parsed expiryDate:", expiryDate);
 
           setFormData({
             code: promoCode.code,
             discount: promoCode.discountValue,
-            startDate: startDate,
             expiryDate: expiryDate,
+            usageLimit: promoCode.usageLimit || 100,
             status: promoCode.active ? "Active" : "Inactive",
           });
 
-          // Show warning if dates couldn't be parsed
-          if (!startDate || !expiryDate) {
+          if (!expiryDate) {
             toast({
               title: "Warning",
-              description: "Some dates could not be parsed correctly. Please verify the dates before saving.",
+              description: "Expiry date could not be parsed correctly. Please verify the date before saving.",
               variant: "destructive",
             });
           }
@@ -256,40 +244,32 @@ export default function EditCodePage() {
       errors.discount = "Discount value must be greater than 0";
     }
 
-    if (!formData.startDate) {
-      errors.startDate = "Start date is required";
-    }
-
     if (!formData.expiryDate) {
       errors.expiryDate = "Expiry date is required";
     }
 
-    if (formData.startDate && formData.expiryDate && formData.startDate >= formData.expiryDate) {
-      errors.expiryDate = "Expiry date must be after start date";
+    if (formData.usageLimit <= 0) {
+      errors.usageLimit = "Usage limit must be greater than 0";
     }
 
     return errors;
   };
 
   const handleCodeChange = (value: string) => {
-    // Convert to uppercase and ensure alphanumeric only
     const cleanedValue = value.toUpperCase().replace(/[^A-Z0-9]/g, "");
     setFormData((prev) => ({
       ...prev,
       code: cleanedValue,
     }));
     
-    // Clear error when user starts typing
     if (formErrors.code) {
       setFormErrors(prev => ({ ...prev, code: "" }));
     }
   };
 
   const handleDiscountChange = (value: string) => {
-    // Allow only numbers and decimal point
     const cleanedValue = value.replace(/[^0-9.]/g, "");
     
-    // Prevent multiple decimal points
     const parts = cleanedValue.split('.');
     const formattedValue = parts.length > 2 
       ? parts[0] + '.' + parts.slice(1).join('') 
@@ -309,9 +289,20 @@ export default function EditCodePage() {
       }));
     }
     
-    // Clear error when user starts typing
     if (formErrors.discount) {
       setFormErrors(prev => ({ ...prev, discount: "" }));
+    }
+  };
+
+  const handleUsageLimitChange = (value: string) => {
+    const numericValue = parseInt(value) || 0;
+    setFormData((prev) => ({
+      ...prev,
+      usageLimit: numericValue,
+    }));
+    
+    if (formErrors.usageLimit) {
+      setFormErrors(prev => ({ ...prev, usageLimit: "" }));
     }
   };
 
@@ -347,7 +338,6 @@ export default function EditCodePage() {
     router.push("/promo-code");
   };
 
-  // Safe format function that handles invalid dates
   const formatSafeDate = (date: Date | undefined): string => {
     if (!date || !isValid(date)) {
       return "DD / MM / YYYY";
@@ -388,7 +378,6 @@ export default function EditCodePage() {
           <div className="">
             <form onSubmit={handleSubmit} className="space-y-8">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-                {/* Code Input */}
                 <div>
                   <Label
                     htmlFor="code"
@@ -414,7 +403,6 @@ export default function EditCodePage() {
                   )}
                 </div>
 
-                {/* Discount Input */}
                 <div>
                   <Label
                     htmlFor="discount"
@@ -443,54 +431,6 @@ export default function EditCodePage() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-6">
-                {/* Start Date */}
-                <div>
-                  <Label
-                    htmlFor="startDate"
-                    className="block text-base font-medium text-black mb-3"
-                  >
-                    Start Date *
-                  </Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        className={cn(
-                          "w-full justify-start text-left font-normal border rounded-md h-[60px]",
-                          formErrors.startDate ? "border-red-500" : "border-[#707070]",
-                          !formData.startDate && "text-muted-foreground"
-                        )}
-                        disabled={updateMutation.isPending}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {formData.startDate && isValid(formData.startDate) ? (
-                          formatSafeDate(formData.startDate)
-                        ) : (
-                          <span>DD / MM / YYYY</span>
-                        )}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar
-                        mode="single"
-                        selected={formData.startDate}
-                        onSelect={(date) => {
-                          setFormData({ ...formData, startDate: date });
-                          if (formErrors.startDate) {
-                            setFormErrors(prev => ({ ...prev, startDate: "" }));
-                          }
-                        }}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  {formErrors.startDate && (
-                    <p className="text-red-500 text-sm mt-1">{formErrors.startDate}</p>
-                  )}
-                </div>
-
-                {/* Expiry Date */}
                 <div>
                   <Label
                     htmlFor="expiryDate"
@@ -529,9 +469,7 @@ export default function EditCodePage() {
                           }
                         }}
                         disabled={(date) =>
-                          formData.startDate
-                            ? date <= formData.startDate
-                            : date < new Date(new Date().setHours(0, 0, 0, 0))
+                          date < new Date(new Date().setHours(0, 0, 0, 0))
                         }
                         initialFocus
                       />
@@ -542,7 +480,31 @@ export default function EditCodePage() {
                   )}
                 </div>
 
-                {/* Status */}
+                <div>
+                  <Label
+                    htmlFor="usageLimit"
+                    className="block text-base font-medium text-black mb-3"
+                  >
+                    Usage Limit *
+                  </Label>
+                  <Input
+                    id="usageLimit"
+                    type="number"
+                    value={formData.usageLimit}
+                    onChange={(e) => handleUsageLimitChange(e.target.value)}
+                    className={cn(
+                      "h-[60px] border-[1px]",
+                      formErrors.usageLimit ? "border-red-500" : "border-[#707070]"
+                    )}
+                    placeholder="100"
+                    min="1"
+                    disabled={updateMutation.isPending}
+                  />
+                  {formErrors.usageLimit && (
+                    <p className="text-red-500 text-sm mt-1">{formErrors.usageLimit}</p>
+                  )}
+                </div>
+
                 <div>
                   <Label
                     htmlFor="status"
@@ -566,7 +528,6 @@ export default function EditCodePage() {
                 </div>
               </div>
 
-              {/* Form Actions */}
               <div className="flex justify-end gap-4 pt-4">
                 <Button
                   type="button"
@@ -589,7 +550,6 @@ export default function EditCodePage() {
             </form>
           </div>
 
-          {/* Loading Overlay */}
           {updateMutation.isPending && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
               <div className="bg-white p-6 rounded-lg shadow-lg">

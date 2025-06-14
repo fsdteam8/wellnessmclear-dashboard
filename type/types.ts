@@ -7,11 +7,13 @@ export interface BaseColumn<T> {
 
 // Blog specific types
 export interface Blog {
+  [x: string]: string;
   _id: string;
+  id: string;
   title: string;
   description: string;
   added: string;
-  comments: number;
+  // comments: number;
   thumbnail: string;
 }
 

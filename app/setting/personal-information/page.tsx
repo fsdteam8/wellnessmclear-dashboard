@@ -1,8 +1,6 @@
 "use client";
 
 import { useState } from "react";
-// import { useRouter } from "next/navigation"
-// import { Breadcrumb } from "@/components/breadcrumb";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,7 +16,6 @@ import { Calendar, PenLine, Save, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function PersonalInformationPage() {
-  // const router = useRouter()
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
@@ -38,6 +35,9 @@ export default function PersonalInformationPage() {
 
   const handleSave = async () => {
     setIsLoading(true);
+
+    // 👉 Log form data to console
+    console.log("Form Data Submitted:", formData);
 
     // Simulate API call
     setTimeout(() => {
@@ -68,14 +68,6 @@ export default function PersonalInformationPage() {
     <div className="flex h-screen bg-gray-50">
       <div className="flex-1 overflow-auto">
         <div className="p-6">
-          {/* <Breadcrumb
-            items={[
-              { label: "Dashboard", href: "/" },
-              { label: "Setting", href: "/setting" },
-              { label: "Personal information" },
-            ]}
-          /> */}
-
           <div className="flex items-center justify-between mb-6">
             <div>
               <h1 className="text-2xl font-semibold text-gray-900">Setting</h1>
@@ -84,14 +76,14 @@ export default function PersonalInformationPage() {
               </p>
             </div>
             <Button
-                onClick={handleUpdateProfile}
-                className="bg-[#525773] hover:bg-slate-700"
-              >
-                <p className="flex items-center space-x-2 text-base font-medium">
-                  <PenLine className="w-4 h-4" />
-                  <span>Update Profile</span>
-                </p>
-              </Button>
+              onClick={handleUpdateProfile}
+              className="bg-[#525773] hover:bg-slate-700"
+            >
+              <p className="flex items-center space-x-2 text-base font-medium">
+                <PenLine className="w-4 h-4" />
+                <span>Update Profile</span>
+              </p>
+            </Button>
           </div>
 
           <div className="p-6">
@@ -106,9 +98,6 @@ export default function PersonalInformationPage() {
                 </h2>
               </div>
             </div>
-
-
-
 
             {!isEditing ? (
               <div className="space-y-6">
@@ -215,12 +204,11 @@ export default function PersonalInformationPage() {
                     <Label htmlFor="address">Address</Label>
                     <Input
                       id="address"
-                      
                       value={formData.address}
                       onChange={(e) =>
                         setFormData({ ...formData, address: e.target.value })
                       }
-                     className="mt-3 border border-[#707070] h-[60px]"
+                      className="mt-3 border border-[#707070] h-[60px]"
                     />
                   </div>
                 </div>
@@ -228,9 +216,9 @@ export default function PersonalInformationPage() {
                 <div className="flex justify-end space-x-4 pt-6">
                   <Button variant="outline" onClick={handleCancel}>
                     <p className="flex items-center space-x-2 text-base font-medium">
-                  <X  className="w-4 h-4" />
-                  <span>Cancel</span>
-                </p>
+                      <X className="w-4 h-4" />
+                      <span>Cancel</span>
+                    </p>
                   </Button>
                   <Button
                     onClick={handleSave}
@@ -238,9 +226,9 @@ export default function PersonalInformationPage() {
                     className="bg-[#525773] hover:bg-[#424a7a]"
                   >
                     <p className="flex items-center space-x-2 text-base font-medium">
-                  <Save  className="w-4 h-4" />
-                  <span>{isLoading ? "Saving..." : "Save"}</span>
-                </p>
+                      <Save className="w-4 h-4" />
+                      <span>{isLoading ? "Saving..." : "Save"}</span>
+                    </p>
                   </Button>
                 </div>
               </div>

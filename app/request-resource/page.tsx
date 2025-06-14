@@ -101,7 +101,7 @@ export default function RequestResourcePage() {
               }),
             thumbnail:
               resource.thumbnail || "/placeholder.svg?height=40&width=40",
-            statuses: ["Pending"],
+            statuses: ["pending"],
             _id: resource._id,
           }));
 
@@ -242,8 +242,8 @@ export default function RequestResourcePage() {
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Approve">Approve</SelectItem>
-                <SelectItem value="Reject">Reject</SelectItem>
+                <SelectItem value="approved">Approved</SelectItem>
+                <SelectItem value="rejected">Rejected</SelectItem>
               </SelectContent>
             </Select>
           </div>

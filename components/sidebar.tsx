@@ -18,6 +18,7 @@ import {
   // Bell,
 } from "lucide-react";
 import Image from "next/image";
+import { signOut } from "next-auth/react";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
@@ -56,39 +57,35 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 space-y-4 px-3 lg:py-10 overflow-hidden">
-  {navigation.map((item) => {
-    const isActive =
-      pathname === item.href ||
-      (item.href !== "/" && pathname.startsWith(item.href));
+        {navigation.map((item) => {
+          const isActive =
+            pathname === item.href ||
+            (item.href !== "/" && pathname.startsWith(item.href));
 
-    return (
-      <Link
-        key={item.name}
-        href={item.href}
-        className={cn(
-          "flex items-center space-x-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-          isActive
-            ? "text-yellow-400 hover:bg-slate-600 hover:text-white"
-            : "text-slate-300 hover:bg-slate-600 hover:text-white"
-        )}
-      >
-        <item.icon className="h-5 w-5" />
-        <span>{item.name}</span>
-      </Link>
-    );
-  })}
-</nav>
-
+          return (
+            <Link
+              key={item.name}
+              href={item.href}
+              className={cn(
+                "flex items-center space-x-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                isActive
+                  ? "text-yellow-400 hover:bg-slate-600 hover:text-white"
+                  : "text-slate-300 hover:bg-slate-600 hover:text-white"
+              )}
+            >
+              <item.icon className="h-5 w-5" />
+              <span>{item.name}</span>
+            </Link>
+          );
+        })}
+      </nav>
 
       {/* Logout */}
-      <div className="p-3">
-        <Link
-          href="/logout"
-          className="flex items-center space-x-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-600 hover:text-white"
-        >
+      <div className="p-3 cursor-pointer" onClick={() => signOut()}>
+        <p className="flex items-center space-x-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-600 hover:text-white">
           <LogOut className="h-5 w-5" />
           <span>Log Out</span>
-        </Link>
+        </p>
       </div>
     </div>
   );

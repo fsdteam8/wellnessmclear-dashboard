@@ -1,61 +1,219 @@
-"use client";
 
-// import { Breadcrumb } from "@/components/breadcrumb";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-} from "recharts";
-import Image from "next/image";
-import { SquareArrowOutUpRight } from "lucide-react";
+"use client"
 
-const revenueData = [
-  { date: "5 Oct", thisMonth: 1000, lastMonth: 800 },
-  { date: "10 Oct", thisMonth: 1500, lastMonth: 1200 },
-  { date: "14 Oct", thisMonth: 1200, lastMonth: 1400 },
-  { date: "20 Oct", thisMonth: 1800, lastMonth: 1600 },
-  { date: "25 Oct", thisMonth: 1400, lastMonth: 1800 },
-  { date: "27 Oct", thisMonth: 1600, lastMonth: 1500 },
-  { date: "30 Oct", thisMonth: 2000, lastMonth: 1700 },
-];
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, PieChart, Pie, Cell } from "recharts"
+import Image from "next/image"
+import { SquareArrowOutUpRight } from "lucide-react"
+import { useQuery } from "@tanstack/react-query"
+import { useState } from "react"
 
-const yearlyRevenueData = [
-  { month: "JAN", thisYear: 0, lastYear: 0 },
-  { month: "FEB", thisYear: 500000, lastYear: 300000 },
-  { month: "MAR", thisYear: 1000000, lastYear: 800000 },
-  { month: "APR", thisYear: 800000, lastYear: 1200000 },
-  { month: "MAY", thisYear: 600000, lastYear: 1500000 },
-  { month: "JUN", thisYear: 400000, lastYear: 800000 },
-  { month: "JUL", thisYear: 200000, lastYear: 600000 },
-  { month: "AUG", thisYear: 100000, lastYear: 400000 },
-  { month: "SEP", thisYear: 800000, lastYear: 200000 },
-  { month: "OCT", thisYear: 1200000, lastYear: 1000000 },
-  { month: "NOV", thisYear: 600000, lastYear: 1200000 },
-  { month: "DEC", thisYear: 400000, lastYear: 800000 },
-];
+type DashboardSummary = {
+  liveProducts: number
+  newProducts: {
+    thisDay: number
+    thisWeek: number
+    thisMonth: number
+    thisYear: number
+  }
+  ownRevenue: number
+  productSell: {
+    name: string
+    percentage: number
+  }[]
+  totalRevenue: number
+  totalSellers: number
+  totalUsers: number
+}
 
-const productSellData = [
-  { name: "Category 1", value: 35, color: "#8b5cf6" },
-  { name: "Category 2", value: 30, color: "#06b6d4" },
-  { name: "Category 3", value: 27, color: "#f59e0b" },
-  { name: "Category 4", value: 22, color: "#10b981" },
-];
+// Colors for pie chart
+const pieColors = ["#8b5cf6", "#06b6d4", "#f59e0b", "#10b981", "#ef4444", "#f97316"]
 
 export default function Dashboard() {
+  const TOKEN =
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2ODNlZDVlYTY0ODUxNzk2MWZlYmQ2OGQiLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE3NDk4ODkzNzgsImV4cCI6MTc1MDQ5NDE3OH0.GkczutuRZ01PJuoWkHzoLx2PB_gBDkEGAfMyiN7-4XI"
+
+  const [selectedRevenuePeriod, setSelectedRevenuePeriod] = useState<"day" | "week" | "month" | "year">("month")
+
+  const [selectedPeriod, setSelectedPeriod] = useState<"thisDay" | "thisWeek" | "thisMonth" | "thisYear">("thisMonth")
+
+  const [selectedOwnRevenuePeriod, setSelectedOwnRevenuePeriod] = useState<"day" | "week" | "month" | "year">("month")
+
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: ["dashboard-summary"],
+    queryFn: async () => {
+      if (!TOKEN) throw new Error("No token available")
+
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/admin/dashboard/dashboard-summary`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${TOKEN}`,
+        },
+      })
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch dashboard summary")
+      }
+
+      return res.json()
+    },
+    enabled: !!TOKEN,
+  })
+
+  const { data: ownCardData } = useQuery({
+    queryKey: ["Revenue-Ratio", selectedOwnRevenuePeriod],
+    queryFn: async () => {
+      if (!TOKEN) throw new Error("No token available")
+
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/admin/dashboard/own-revenue-report?filter=${selectedOwnRevenuePeriod}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${TOKEN}`,
+          },
+        },
+      )
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch own revenue data")
+      }
+
+      return res.json()
+    },
+    enabled: !!TOKEN,
+  })
+
+  const { data: totalRevenue } = useQuery({
+    queryKey: ["Revenue-total", selectedRevenuePeriod],
+    queryFn: async () => {
+      if (!TOKEN) throw new Error("No token available")
+
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/admin/dashboard/revenue-report?filter=${selectedRevenuePeriod}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${TOKEN}`,
+          },
+        },
+      )
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch own revenue data")
+      }
+
+      return res.json()
+    },
+    enabled: !!TOKEN,
+  })
+
+  const ownChatData = ownCardData?.data || []
+  const totalRevenueData = totalRevenue?.data || []
+  const summaryData: DashboardSummary = data?.data || {}
+
+  const getCurrentPeriodData = () => {
+    const periodData = {
+      thisDay: {
+        value: summaryData.newProducts?.thisDay || 0,
+        label: "This Day",
+      },
+      thisWeek: {
+        value: summaryData.newProducts?.thisWeek || 0,
+        label: "This Week",
+      },
+      thisMonth: {
+        value: summaryData.newProducts?.thisMonth || 0,
+        label: "This Month",
+      },
+      thisYear: {
+        value: summaryData.newProducts?.thisYear || 0,
+        label: "This Year",
+      },
+    }
+    return periodData[selectedPeriod]
+  }
+
+  // Transform the own revenue data for the chart based on selected period
+  const transformedOwnRevenueData = ownChatData.map(
+    (
+      item: { date?: string; day?: string; month?: string; year?: string; revenue: number },
+      index: number
+    ) => {
+      let dateKey
+
+      switch (selectedOwnRevenuePeriod) {
+        case "day":
+          dateKey = item.date
+          break
+        case "week":
+          dateKey = item.day
+          break
+        case "month":
+          dateKey = item.month
+          break
+        case "year":
+          dateKey = item.year
+          break
+        default:
+          dateKey = item.month
+      }
+
+      return {
+        date: dateKey,
+        revenue: item.revenue,
+        previousRevenue: index > 0 ? ownChatData[index - 1].revenue : 0,
+      }
+    }
+  )
+
+  // Get the legend labels based on selected period
+  // const getLegendLabels = () => {
+  //   switch (selectedOwnRevenuePeriod) {
+  //     case "day":
+  //       return { current: "This Day", previous: "Last Day" }
+  //     case "week":
+  //       return { current: "This Week", previous: "Last Week" }
+  //     case "month":
+  //       return { current: "This Month", previous: "Last Month" }
+  //     case "year":
+  //       return { current: "This Year", previous: "Last Year" }
+  //     default:
+  //       return { current: "This Month", previous: "Last Month" }
+  //   }
+  // }
+
+  // const legendLabels = getLegendLabels()
+
+  // Transform product sell data for pie chart
+  const productSellData =
+    summaryData.productSell?.map((item, index) => ({
+      name: item.name,
+      value: item.percentage,
+      color: pieColors[index % pieColors.length],
+    })) || []
+
+  if (isLoading)
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <p className="text-lg">Loading...</p>
+      </div>
+    )
+  if (isError)
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <p className="text-lg text-red-500">Error: {(error as Error).message}</p>
+      </div>
+    )
+
   return (
     <div className="flex h-screen bg-gray-50">
       <div className="flex-1 overflow-auto">
         <div className="p-6">
-          {/* <Breadcrumb items={[{ label: "Dashboard" }]} /> */}
-
           <div className="mb-6">
             <h1 className="text-2xl font-semibold text-gray-900">Over View</h1>
             <p className="text-gray-500">Dashboard</p>
@@ -67,24 +225,16 @@ export default function Dashboard() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="space-y-3">
-                    <p className="text-[20px] font-bold text-[#131313]">
-                      Total Revenue
-                    </p>
+                    <p className="text-[20px] font-bold text-[#131313]">Total Revenue</p>
                     <div className="flex items-center space-x-2">
                       <div className="w-[10px] h-[10px] bg-[#525773] rounded-full"></div>
                       <p className="text-base font-medium text-[#424242]">
-                        132,570
+                        ${summaryData.totalRevenue?.toLocaleString() || "0"}
                       </p>
                     </div>
                   </div>
                   <div className="h-12 w-12 flex items-center justify-center">
-                    {/* <TrendingUp className="h-6 w-6 text-blue-600" /> */}
-                    <Image
-                      src="/images/dassbardHeaderIcon-5.png"
-                      alt="Logo"
-                      width={100}
-                      height={100}
-                    />
+                    <Image src="/images/dassbardHeaderIcon-5.png" alt="Total Revenue" width={100} height={100} />
                   </div>
                 </div>
               </CardContent>
@@ -94,24 +244,16 @@ export default function Dashboard() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="space-y-3">
-                    <p className="text-[20px] font-bold text-[#131313]">
-                      Own Revenue
-                    </p>
+                    <p className="text-[20px] font-bold text-[#131313]">Own Revenue</p>
                     <div className="flex items-center space-x-2">
                       <div className="w-[10px] h-[10px] bg-[#525773] rounded-full"></div>
                       <p className="text-base font-medium text-[#424242]">
-                        132,570
+                        ${summaryData.ownRevenue?.toLocaleString() || "0"}
                       </p>
                     </div>
                   </div>
                   <div className="h-12 w-12 flex items-center justify-center">
-                    {/* <DollarSign className="h-6 w-6 text-green-600" /> */}
-                    <Image
-                      src="/images/dassbardHeaderIcon-4.png"
-                      alt="Logo"
-                      width={100}
-                      height={100}
-                    />
+                    <Image src="/images/dassbardHeaderIcon-4.png" alt="Own Revenue" width={100} height={100} />
                   </div>
                 </div>
               </CardContent>
@@ -121,24 +263,16 @@ export default function Dashboard() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="space-y-3">
-                    <p className="text-[20px] font-bold text-[#131313]">
-                      Live Product
-                    </p>
+                    <p className="text-[20px] font-bold text-[#131313]">Live Product</p>
                     <div className="flex items-center space-x-2">
                       <div className="w-[10px] h-[10px] bg-[#525773] rounded-full"></div>
                       <p className="text-base font-medium text-[#424242]">
-                        132,570
+                        {summaryData.liveProducts?.toLocaleString() || "0"}
                       </p>
                     </div>
                   </div>
                   <div className="h-12 w-12 flex items-center justify-center">
-                    {/* <Package className="h-6 w-6 text-orange-600" /> */}
-                    <Image
-                      src="/images/dassbardHeaderIcon-3.png"
-                      alt="Logo"
-                      width={100}
-                      height={100}
-                    />
+                    <Image src="/images/dassbardHeaderIcon-3.png" alt="Live Products" width={100} height={100} />
                   </div>
                 </div>
               </CardContent>
@@ -148,24 +282,16 @@ export default function Dashboard() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="space-y-3">
-                    <p className="text-[20px] font-bold text-[#131313]">
-                      Total Seller
-                    </p>
+                    <p className="text-[20px] font-bold text-[#131313]">Total Seller</p>
                     <div className="flex items-center space-x-2">
                       <div className="w-[10px] h-[10px] bg-[#525773] rounded-full"></div>
                       <p className="text-base font-medium text-[#424242]">
-                        132,570
+                        {summaryData.totalSellers?.toLocaleString() || "0"}
                       </p>
                     </div>
                   </div>
                   <div className="h-12 w-12 flex items-center justify-center">
-                    {/* <Users className="h-6 w-6 text-yellow-600" /> */}
-                    <Image
-                      src="/images/dassbardHeaderIcon-2.png"
-                      alt="Logo"
-                      width={100}
-                      height={100}
-                    />
+                    <Image src="/images/dassbardHeaderIcon-2.png" alt="Total Sellers" width={100} height={100} />
                   </div>
                 </div>
               </CardContent>
@@ -175,24 +301,16 @@ export default function Dashboard() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="space-y-3">
-                    <p className="text-[20px] font-bold text-[#131313]">
-                      Total User
-                    </p>
+                    <p className="text-[20px] font-bold text-[#131313]">Total User</p>
                     <div className="flex items-center space-x-2">
                       <div className="w-[10px] h-[10px] bg-[#525773] rounded-full"></div>
                       <p className="text-base font-medium text-[#424242]">
-                        132,570
+                        {summaryData.totalUsers?.toLocaleString() || "0"}
                       </p>
                     </div>
                   </div>
                   <div className="h-12 w-12 flex items-center justify-center">
-                    {/* <Users className="h-6 w-6 text-purple-600" /> */}
-                    <Image
-                      src="/images/dassbardHeaderIcon-1.png"
-                      alt="Logo"
-                      width={100}
-                      height={100}
-                    />
+                    <Image src="/images/dassbardHeaderIcon-1.png" alt="Total Users" width={100} height={100} />
                   </div>
                 </div>
               </CardContent>
@@ -201,108 +319,107 @@ export default function Dashboard() {
 
           {/* Charts Row */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-            {/* Own Revenue Ratio */}
+            {/* Own Revenue Ratio - Now using API data with working buttons */}
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">Own Revenue Ratio</CardTitle>
-                  <div className="flex space-x-2">
-                    <Button variant="outline" size="sm">
+                  <CardTitle className="text-lg font-semibold">Own Revenue Ratio</CardTitle>
+                  <div className="flex space-x-1">
+                    <Button
+                      variant={selectedOwnRevenuePeriod === "day" ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setSelectedOwnRevenuePeriod("day")}
+                      className="h-8 px-3 text-xs"
+                    >
                       Day
                     </Button>
-                    <Button variant="outline" size="sm">
+                    <Button
+                      variant={selectedOwnRevenuePeriod === "week" ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setSelectedOwnRevenuePeriod("week")}
+                      className="h-8 px-3 text-xs"
+                    >
                       Week
                     </Button>
-                    <Button variant="default" size="sm">
+                    <Button
+                      variant={selectedOwnRevenuePeriod === "month" ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setSelectedOwnRevenuePeriod("month")}
+                      className="h-8 px-3 text-xs"
+                    >
                       Month
                     </Button>
-                    <Button variant="outline" size="sm">
-                      Year
-                    </Button>
-                  </div>
-                </div>
-                <div className="ml-4">
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 bg-purple-500 rounded-full mr-2"></div>
-                    <span>This Month</span>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 bg-purple-300 rounded-full mr-2"></div>
-                    <span>Last Month</span>
                   </div>
                 </div>
               </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={200}>
-                  <LineChart data={revenueData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis />
-                    <Line
-                      type="monotone"
-                      dataKey="thisMonth"
-                      stroke="#8b5cf6"
-                      strokeWidth={2}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="lastMonth"
-                      stroke="#c4b5fd"
-                      strokeWidth={2}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
+              <CardContent className="pt-2">
+                {ownChatData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={220}>
+                    <LineChart data={transformedOwnRevenueData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#666" }} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#666" }} />
+                      <Line
+                        type="monotone"
+                        dataKey="revenue"
+                        stroke="#8b5cf6"
+                        strokeWidth={3}
+                        dot={{ fill: "#8b5cf6", strokeWidth: 2, r: 4 }}
+                        activeDot={{ r: 6, stroke: "#8b5cf6", strokeWidth: 2 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-[220px]">
+                    <p className="text-gray-500 text-sm">Loading chart data...</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
-            {/* Total New Products Report */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg flex items-center justify-between flex-wrap gap-2">
-                  <div className="font-semibold">Total New Products Report</div>
-                  <div className="text-sm">
-                    <div className="flex items-center">
-                      <div className="w-3 h-3 bg-purple-500 rounded-full mr-2"></div>
-                      <span>This Day</span>
-                    </div>
-                    <div className="flex items-center">
-                      <div className="w-3 h-3 bg-purple-300 rounded-full mr-2"></div>
-                      <span>This Week</span>
-                    </div>
-                    <div className="flex items-center">
-                      <div className="w-3 h-3 bg-purple-600 rounded-full mr-2"></div>
-                      <span>This Month</span>
-                    </div>
+                <CardTitle className="text-lg flex items-center justify-between gap-2">
+                  <div className="font-semibold">Products Report</div>
+
+                  <div className="flex space-x-2 flex-shrink-0">
+                    <Button
+                      variant={selectedPeriod === "thisDay" ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setSelectedPeriod("thisDay")}
+                    >
+                      Day
+                    </Button>
+                    <Button
+                      variant={selectedPeriod === "thisWeek" ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setSelectedPeriod("thisWeek")}
+                    >
+                      Week
+                    </Button>
+                    <Button
+                      variant={selectedPeriod === "thisMonth" ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setSelectedPeriod("thisMonth")}
+                    >
+                      Month
+                    </Button>
+                    <Button
+                      variant={selectedPeriod === "thisYear" ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setSelectedPeriod("thisYear")}
+                    >
+                      Year
+                    </Button>
                   </div>
                 </CardTitle>
-
-                <div className="flex space-x-2">
-                  <Button variant="outline" size="sm">
-                    Day
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    Week
-                  </Button>
-                  <Button variant="default" size="sm">
-                    Month
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    Year
-                  </Button>
-                </div>
               </CardHeader>
+
               <CardContent>
                 <div className="h-48 flex items-center justify-center">
                   <div className="relative">
                     <svg width="200" height="200" viewBox="0 0 200 200">
-                      <circle
-                        cx="100"
-                        cy="100"
-                        r="80"
-                        fill="none"
-                        stroke="#e5e7eb"
-                        strokeWidth="20"
-                      />
+                      <circle cx="100" cy="100" r="80" fill="none" stroke="#e5e7eb" strokeWidth="20" />
                       <circle
                         cx="100"
                         cy="100"
@@ -311,10 +428,19 @@ export default function Dashboard() {
                         stroke="#8b5cf6"
                         strokeWidth="20"
                         strokeDasharray="502"
-                        strokeDashoffset="125"
+                        strokeDashoffset={
+                          502 -
+                          (getCurrentPeriodData().value / Math.max(summaryData.newProducts?.thisYear || 1, 1)) * 502
+                        }
                         transform="rotate(-90 100 100)"
                       />
                     </svg>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="text-center">
+                        <div className="text-2xl font-bold">{getCurrentPeriodData().value}</div>
+                        <div className="text-sm text-gray-500">{getCurrentPeriodData().label}</div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -336,14 +462,7 @@ export default function Dashboard() {
               <CardContent>
                 <ResponsiveContainer width="100%" height={200}>
                   <PieChart>
-                    <Pie
-                      data={productSellData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={40}
-                      outerRadius={80}
-                      dataKey="value"
-                    >
+                    <Pie data={productSellData} cx="50%" cy="50%" innerRadius={40} outerRadius={80} dataKey="value">
                       {productSellData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
@@ -352,16 +471,10 @@ export default function Dashboard() {
                 </ResponsiveContainer>
                 <div className="mt-4 space-y-2">
                   {productSellData.map((item, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center justify-between text-sm"
-                    >
+                    <div key={index} className="flex items-center justify-between text-sm">
                       <div className="flex items-center">
-                        <div
-                          className="w-3 h-3 rounded-full mr-2"
-                          style={{ backgroundColor: item.color }}
-                        ></div>
-                        <span>Categories name</span>
+                        <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: item.color }}></div>
+                        <span>{item.name}</span>
                       </div>
                       <span>{item.value}%</span>
                     </div>
@@ -371,7 +484,7 @@ export default function Dashboard() {
             </Card>
           </div>
 
-          {/* Revenue Report */}
+          {/* Revenue Report - Updated to use API data */}
           <Card>
             <CardHeader>
               <div className="flex justify-between items-center">
@@ -379,55 +492,63 @@ export default function Dashboard() {
                 <div className="flex gap-6">
                   <div className="flex items-center text-sm">
                     <div className="w-3 h-3 bg-purple-500 rounded-full mr-2"></div>
-                    <span>This Year</span>
-                  </div>
-                  <div className="flex items-center text-sm">
-                    <div className="w-3 h-3 bg-red-400 rounded-full mr-2"></div>
-                    <span>Last Year</span>
+                    <span>Current Period</span>
                   </div>
                 </div>
                 <div className="flex space-x-2">
-                  <Button variant="outline" size="sm">
+                  <Button
+                    variant={selectedRevenuePeriod === "day" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setSelectedRevenuePeriod("day")}
+                  >
                     Day
                   </Button>
-                  <Button variant="outline" size="sm">
+                  <Button
+                    variant={selectedRevenuePeriod === "week" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setSelectedRevenuePeriod("week")}
+                  >
                     Week
                   </Button>
-                  <Button variant="outline" size="sm">
+                  <Button
+                    variant={selectedRevenuePeriod === "month" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setSelectedRevenuePeriod("month")}
+                  >
                     Month
-                  </Button>
-                  <Button variant="default" size="sm">
-                    Year
                   </Button>
                 </div>
               </div>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={yearlyRevenueData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Line
-                    type="monotone"
-                    dataKey="thisYear"
-                    stroke="#8b5cf6"
-                    strokeWidth={3}
-                    strokeDasharray="5 5"
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="lastYear"
-                    stroke="#f87171"
-                    strokeWidth={3}
-                    strokeDasharray="5 5"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+              {totalRevenueData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={totalRevenueData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis
+                      dataKey={
+                        selectedRevenuePeriod === "day"
+                          ? "date"
+                          : selectedRevenuePeriod === "week"
+                            ? "day"
+                            : selectedRevenuePeriod === "month"
+                              ? "month"
+                              : "year"
+                      }
+                    />
+                    <YAxis />
+                    <Line type="monotone" dataKey="revenue" stroke="#8b5cf6" strokeWidth={3} strokeDasharray="5 5" />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-[300px]">
+                  <p className="text-gray-500">Loading revenue data...</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
       </div>
     </div>
-  );
+  )
 }

@@ -1,38 +1,146 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-// import { Breadcrumb } from "@/components/breadcrumb"
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
-import { DataTable } from "@/components/data-table";
-import { Download } from "lucide-react";
+import type React from "react"
 
-const mockSalesData = [
-  { id: 1, productId: "45550", quantity: 4, amount: "$30" },
-  { id: 2, productId: "45550", quantity: 5, amount: "$300" },
-  { id: 3, productId: "45550", quantity: 2, amount: "$300" },
-  { id: 4, productId: "45550", quantity: 6, amount: "$300" },
-  { id: 5, productId: "45550", quantity: 1, amount: "$300" },
-  { id: 6, productId: "45550", quantity: 2, amount: "$300" },
-];
+import { useState } from "react"
+import { useQuery } from "@tanstack/react-query"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Card, CardContent } from "@/components/ui/card"
+import { DataTable } from "@/components/data-table"
+import { Download, Loader2 } from "lucide-react"
+
+interface SalesData {
+  quantity: number
+  amount: number
+  productId: string
+}
+
+interface ApiResponse {
+  status: boolean
+  message: string
+  data: SalesData[]
+}
 
 const columns = [
   { key: "productId", label: "Product ID" },
   { key: "quantity", label: "Quantity" },
   { key: "amount", label: "Amount" },
-];
+]
+
+// Fetch function for all sales
+const fetchSalesData = async (): Promise<ApiResponse> => {
+  const TOKEN =
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2ODNlZDVlYTY0ODUxNzk2MWZlYmQ2OGQiLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE3NDk4ODkzNzgsImV4cCI6MTc1MDQ5NDE3OH0.GkczutuRZ01PJuoWkHzoLx2PB_gBDkEGAfMyiN7-4XI"
+  const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/admin/dashboard/my-sales`,{
+   headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${TOKEN}`, // Replace with your actual token
+    },
+  })
+  if (!response.ok) {
+    throw new Error("Failed to fetch sales data")
+  }
+  return response.json()
+}
+
+// Fetch function for search by ID
+const fetchSalesDataBySearch = async (searchId: string): Promise<ApiResponse> => {
+  const TOKEN =
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2ODNlZDVlYTY0ODUxNzk2MWZlYmQ2OGQiLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE3NDk4ODkzNzgsImV4cCI6MTc1MDQ5NDE3OH0.GkczutuRZ01PJuoWkHzoLx2PB_gBDkEGAfMyiN7-4XI"
+  const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/admin/dashboard/my-sales?search=${encodeURIComponent(searchId)}`,{
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${TOKEN}`, // Replace with your actual token
+    },
+  })
+  if (!response.ok) {
+    throw new Error("Failed to fetch sales data")
+  }
+  return response.json()
+}
 
 export default function MySalesPage() {
-  const [currentPage, setCurrentPage] = useState(1);
-  const [productIdFilter, setProductIdFilter] = useState("");
-  const itemsPerPage = 6;
-  const totalItems = mockSalesData.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const [currentPage, setCurrentPage] = useState(1)
+  const [productIdFilter, setProductIdFilter] = useState("")
+  const [searchTerm, setSearchTerm] = useState("")
+  const itemsPerPage = 6
+
+  // Query for all sales data (when no search)
+  const {
+    data: allSalesData,
+    isLoading: isLoadingAll,
+    error: errorAll,
+  } = useQuery({
+    queryKey: ["sales-data"],
+    queryFn: fetchSalesData,
+    enabled: !searchTerm, // Only fetch when not searching
+  })
+
+  // Query for search results
+  const {
+    data: searchSalesData,
+    isLoading: isLoadingSearch,
+    error: errorSearch,
+  } = useQuery({
+    queryKey: ["sales-data-search", searchTerm],
+    queryFn: () => fetchSalesDataBySearch(searchTerm),
+    enabled: !!searchTerm, // Only fetch when searching
+  })
+
+  // Determine which data to use
+  const currentData = searchTerm ? searchSalesData : allSalesData
+  const isLoading = searchTerm ? isLoadingSearch : isLoadingAll
+  const error = searchTerm ? errorSearch : errorAll
+
+  // Format data for display
+  const formattedData =
+    currentData?.data?.map((item, index) => ({
+      id: index + 1,
+      productId: item.productId,
+      quantity: item.quantity,
+      amount: `$${item.amount.toFixed(2)}`,
+    })) || []
+
+  // Calculate total sales
+  const totalSales = currentData?.data?.reduce((sum, item) => sum + item.amount, 0) || 0
+
+  const totalItems = formattedData.length
+  const totalPages = Math.ceil(totalItems / itemsPerPage)
+
+  const handleSearch = () => {
+    if (productIdFilter.trim()) {
+      setSearchTerm(productIdFilter.trim())
+      setCurrentPage(1) // Reset to first page when searching
+    }
+  }
 
   const handleReset = () => {
-    setProductIdFilter("");
-  };
+    setProductIdFilter("")
+    setSearchTerm("")
+    setCurrentPage(1)
+  }
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleSearch()
+    }
+  }
+
+  if (error) {
+    return (
+      <div className="flex h-screen bg-[#EDEEF1] items-center justify-center">
+        <Card className="p-6">
+          <CardContent>
+            <p className="text-red-600">Error loading sales data: {error.message}</p>
+            <Button onClick={() => window.location.reload()} className="mt-4">
+              Retry
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
 
   return (
     <div className="flex h-screen bg-[#EDEEF1]">
@@ -40,11 +148,8 @@ export default function MySalesPage() {
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
             <div>
-              {/* <Breadcrumb items={[{ label: "Dashboard", href: "/" }, { label: "wallet" }]} /> */}
               <div className="mt-4">
-                <h1 className="text-2xl font-semibold text-gray-900">
-                  My Sales
-                </h1>
+                <h1 className="text-2xl font-semibold text-gray-900">My Sales</h1>
                 <p className="text-gray-500">Dashboard &gt; wallet</p>
               </div>
             </div>
@@ -56,22 +161,26 @@ export default function MySalesPage() {
 
           {/* Total Sales Card */}
           <Card className="mb-8 bg-[#525773] text-white w-[470px] rounded-[8px]">
-            <CardContent className="p-8 ">
+            <CardContent className="p-8">
               <div className="space-y-3">
                 <p className="text-base opacity-90 ml-2">Total Sales</p>
-
                 <div className="flex items-center space-x-2">
                   <div className="w-[10px] h-[10px] bg-[#09B850] rounded-full"></div>
-                  <p className="text-[16px] font-bold">
-                    $132,570.00
-                  </p>
+                  {isLoading ? (
+                    <div className="flex items-center space-x-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <p className="text-[16px] font-bold">Loading...</p>
+                    </div>
+                  ) : (
+                    <p className="text-[16px] font-bold">${totalSales.toFixed(2)}</p>
+                  )}
                 </div>
               </div>
             </CardContent>
           </Card>
 
           {/* Sales History */}
-          <div className=" p-6">
+          <div className="p-6">
             <h2 className="text-lg font-semibold mb-4">Sales History</h2>
 
             <div className="flex items-center space-x-4 mb-6">
@@ -79,25 +188,43 @@ export default function MySalesPage() {
                 placeholder="Enter Product ID"
                 value={productIdFilter}
                 onChange={(e) => setProductIdFilter(e.target.value)}
-                className="max-w-xs border border-[#707070] rounded-md" 
+                onKeyPress={handleKeyPress}
+                className="max-w-xs border border-[#707070] rounded-md"
               />
-              <button onClick={handleReset}>
+              <Button onClick={handleSearch} disabled={!productIdFilter.trim() || isLoading} variant="outline">
+                {isLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                Search
+              </Button>
+              <Button onClick={handleReset} variant="outline" disabled={isLoading}>
                 Reset
-              </button>
+              </Button>
             </div>
 
-            <DataTable
-              columns={columns}
-              data={mockSalesData}
-              currentPage={currentPage}
-              totalPages={totalPages}
-              totalItems={totalItems}
-              itemsPerPage={itemsPerPage}
-              onPageChange={setCurrentPage}
-            />
+            {isLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin" />
+                <span className="ml-2">Loading sales data...</span>
+              </div>
+            ) : formattedData.length > 0 ? (
+              <DataTable
+                columns={columns}
+                data={formattedData}
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={totalItems}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+              />
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-gray-500">
+                  {searchTerm ? "No sales found for the searched product ID." : "No sales data available."}
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>
     </div>
-  );
+  )
 }

@@ -8,6 +8,7 @@ import "./globals.css";
 import { Sidebar } from "@/components/sidebar";
 import Header from "@/components/header";
 import AppProvider from "@/provider/AppProvider";
+import AuthProvider from "@/provider/AuthProvider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -25,14 +26,16 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <AppProvider>
-          <Header />
-          <div className="flex">
-            <Sidebar />
+          <AuthProvider>
+            <Header />
+            <div className="flex">
+              <Sidebar />
 
-            <div className="w-full mt-[60px] bg-[#EDEEF1]">{children}</div>
-          </div>
+              <div className="w-full mt-[60px] bg-[#EDEEF1]">{children}</div>
+            </div>
 
-          {/* <Toaster /> */}
+            {/* <Toaster /> */}
+          </AuthProvider>
         </AppProvider>
       </body>
     </html>

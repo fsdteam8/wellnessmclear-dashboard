@@ -68,6 +68,7 @@ export type ResourceStatus = "Approved" | "Pending" | "Reject";
 // Resource Request type
 export interface ResourceRequest {
   id: number;
+  _id: number;
   name: string;
   seller: Seller;
   price: string;

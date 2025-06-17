@@ -21,7 +21,7 @@ import Image from "next/image";
 import { signOut } from "next-auth/react";
 
 const navigation = [
-  { name: "Dashboard", href: "/", icon: LayoutDashboard },
+  { name: "Dashboard", href: "/overview", icon: LayoutDashboard },
   { name: "Practice Areas", href: "/practice-area", icon: Tag },
   { name: "Resource Types", href: "/resource-type", icon: Tag },
   { name: "Promo Code", href: "/promo-code", icon: Ticket },

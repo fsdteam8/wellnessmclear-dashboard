@@ -15,6 +15,7 @@ import {
   User,
   Settings,
   LogOut,
+  Mails,
   // Bell,
 } from "lucide-react";
 import Image from "next/image";
@@ -37,6 +38,7 @@ const navigation = [
   { name: "Blog Management", href: "/blog-management", icon: FileText },
   { name: "Seller Profile", href: "/seller-profile", icon: User },
   { name: "User Profile", href: "/user-profile", icon: User },
+  {name: "NewsLetter", href:"/news-letter", icon: Mails  },
   { name: "Setting", href: "/setting", icon: Settings },
 ];
 

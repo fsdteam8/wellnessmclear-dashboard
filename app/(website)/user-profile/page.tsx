@@ -2,55 +2,27 @@
 
 // import { useState } from "react";
 // import { useQuery } from "@tanstack/react-query";
-// import { DataTable } from "@/components/data-table";
-// import { Card, CardContent } from "@/components/ui/card";
+// // import { DataTable } from "@/components/data-table";
+// // import { Card, CardContent } from "@/components/ui/card";
 // import { Button } from "@/components/ui/button";
 // import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-
-// interface Address {
-//   country: string;
-//   cityState: string;
-//   roadArea: string;
-//   postalCode: string;
-//   taxId: string;
-// }
+// import { DataTable } from "@/components/data-table";
+// import { Card, CardContent } from "@/components/ui/card";
 
 // interface ApiUser {
-//   _id: string;
-//   firstName: string;
-//   lastName: string;
-//   phoneNumber: string;
-//   email: string;
-//   username: string;
-//   dob: string | null;
-//   gender: string;
-//   role: string;
-//   sellerStatus: string;
-//   bio: string;
+//   id: string;
+//   name: string;
 //   profileImage: string;
-//   multiProfileImage: string[];
-//   pdfFile: string;
-//   otp: string | null;
-//   otpExpires: string | null;
-//   refreshToken: string;
-//   hasActiveSubscription: boolean;
-//   subscriptionExpireDate: string | null;
-//   address: Address;
+//   totalOrders: number;
+//   deliveredOrders: number;
+//   pendingOrders: number;
+//   cancelledOrders: number;
 // }
 
 // interface ApiResponse {
-//   status: boolean;
+//   status: string;
 //   message: string;
-//   data: {
-//     users: ApiUser[];
-//     paginationInfo: {
-//       currentPage: number;
-//       totalPages: number;
-//       totalData: number;
-//       hasNextPage: boolean;
-//       hasPrevPage: boolean;
-//     };
-//   };
+//   data: ApiUser[];
 // }
 
 // interface DisplayUser {
@@ -58,9 +30,6 @@
 //   userId: string;
 //   name: string;
 //   avatar: string;
-//   email: string;
-//   role: string;
-//   phoneNumber: string;
 //   totalOrder: number;
 //   deliveredOrder: number;
 //   pendingOrder: number;
@@ -89,19 +58,19 @@
 // };
 
 // const transformUsers = (apiUsers: ApiUser[]): DisplayUser[] => {
-//   return apiUsers.map((user) => ({
-//     id: user._id,
-//     userId: user._id,
-//     name: `${user.firstName} ${user.lastName}`.trim(),
+//   const transformed = apiUsers.map((user) => ({
+//     id: user.id,
+//     userId: user.id,
+//     name: user.name,
 //     avatar: user.profileImage || "/placeholder.svg?height=32&width=32",
-//     email: user.email,
-//     role: user.role,
-//     phoneNumber: user.phoneNumber || "N/A",
-//     totalOrder: Math.floor(Math.random() * 300) + 50,
-//     deliveredOrder: Math.floor(Math.random() * 200) + 30,
-//     pendingOrder: Math.floor(Math.random() * 50) + 5,
-//     cancelOrder: Math.floor(Math.random() * 20) + 1,
+//     totalOrder: user.totalOrders,
+//     deliveredOrder: user.deliveredOrders,
+//     pendingOrder: user.pendingOrders,
+//     cancelOrder: user.cancelledOrders,
 //   }));
+  
+//   console.log("Transformed Display Users:", transformed);
+//   return transformed;
 // };
 
 // const columns = [
@@ -117,31 +86,10 @@
 //             {row.name.split(" ").map((n) => n[0]).join("").toUpperCase()}
 //           </AvatarFallback>
 //         </Avatar>
-//         <div>
-//           <span className="font-medium">{row.name}</span>
-//           <p className="text-xs text-gray-500">{row.email}</p>
-//         </div>
+//         <span className="font-medium">{row.name}</span>
 //       </div>
 //     ),
 //   },
-//   {
-//     key: "role",
-//     label: "Role",
-//     render: (value: string) => (
-//       <span
-//         className={`px-2 py-1 rounded-full text-xs font-medium ${
-//           value === "ADMIN"
-//             ? "bg-red-100 text-red-800"
-//             : value === "SELLER"
-//             ? "bg-blue-100 text-blue-800"
-//             : "bg-green-100 text-green-800"
-//         }`}
-//       >
-//         {value}
-//       </span>
-//     ),
-//   },
-//   { key: "phoneNumber", label: "Phone" },
 //   { key: "totalOrder", label: "Total Order" },
 //   { key: "deliveredOrder", label: "Delivered Order" },
 //   { key: "pendingOrder", label: "Pending Order" },
@@ -176,10 +124,7 @@
 //     staleTime: 5 * 60 * 1000,
 //   });
 
-//   const displayUsers = apiResponse ? transformUsers(apiResponse.data.users) : [];
-
-//   console.log("displayUser",displayUsers)
-//   const paginationInfo = apiResponse?.data.paginationInfo;
+//   const displayUsers = apiResponse ? transformUsers(apiResponse.data) : [];
 
 //   const totalSales = displayUsers.reduce(
 //     (sum, user) => sum + user.totalOrder * 65.5,
@@ -229,7 +174,7 @@
 //                 <h1 className="text-2xl font-semibold text-gray-900">
 //                   User Profile
 //                 </h1>
-//                 <p className="text-gray-500">Dashboard &gt; User Profile</p>
+//                 <p className="text-gray-500">Dashboard User Profile</p>
 //               </div>
 //             </div>
 //             <Card className="bg-[#525773] text-white w-[259px] rounded-[8px]">
@@ -252,13 +197,11 @@
 
 //           <div className="mb-4 flex items-center justify-between">
 //             <p className="text-sm text-gray-600">
-//               Showing {displayUsers.length} of{" "}
-//               {paginationInfo?.totalData || 0} users
+//               Showing {displayUsers.length} of {displayUsers.length} users
 //             </p>
 //             <div className="flex items-center space-x-2">
 //               <span className="text-sm text-gray-600">
-//                 Page {paginationInfo?.currentPage || 1} of{" "}
-//                 {paginationInfo?.totalPages || 1}
+//                 Page {currentPage} of {1}
 //               </span>
 //             </div>
 //           </div>
@@ -266,9 +209,9 @@
 //           <DataTable
 //             columns={columns}
 //             data={displayUsers}
-//             currentPage={paginationInfo?.currentPage || 1}
-//             totalPages={paginationInfo?.totalPages || 1}
-//             totalItems={paginationInfo?.totalData || 0}
+//             currentPage={currentPage}
+//             totalPages={1}
+//             totalItems={displayUsers.length}
 //             itemsPerPage={displayUsers.length}
 //             onPageChange={handlePageChange}
 //           />
@@ -286,10 +229,10 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { DataTable } from "@/components/data-table";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { DataTable } from "@/components/data-table";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface ApiUser {
   id: string;
@@ -305,6 +248,12 @@ interface ApiResponse {
   status: string;
   message: string;
   data: ApiUser[];
+  pagination?: {
+    totalPages: number;
+    currentPage: number;
+    totalItems: number;
+    itemsPerPage: number;
+  };
 }
 
 interface DisplayUser {
@@ -408,6 +357,11 @@ export default function UserProfilePage() {
 
   const displayUsers = apiResponse ? transformUsers(apiResponse.data) : [];
 
+  // Get pagination info from API response or use defaults
+  const totalPages = apiResponse?.pagination?.totalPages || Math.ceil(displayUsers.length / 10);
+  const totalItems = apiResponse?.pagination?.totalItems || displayUsers.length;
+  const itemsPerPage = apiResponse?.pagination?.itemsPerPage || 10;
+
   const totalSales = displayUsers.reduce(
     (sum, user) => sum + user.totalOrder * 65.5,
     0
@@ -419,7 +373,7 @@ export default function UserProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen bg-gray-50 items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
           <p className="mt-4 text-gray-600">Loading users...</p>
@@ -430,7 +384,7 @@ export default function UserProfilePage() {
 
   if (isError) {
     return (
-      <div className="flex h-screen bg-gray-50 items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-600 mb-4">
             Error loading users: {error?.message}
@@ -447,8 +401,8 @@ export default function UserProfilePage() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <div className="flex-1 overflow-auto">
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-full">
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
             <div>
@@ -479,11 +433,11 @@ export default function UserProfilePage() {
 
           <div className="mb-4 flex items-center justify-between">
             <p className="text-sm text-gray-600">
-              Showing {displayUsers.length} of {displayUsers.length} users
+              Showing {displayUsers.length} of {totalItems} users
             </p>
             <div className="flex items-center space-x-2">
               <span className="text-sm text-gray-600">
-                Page {currentPage} of {1}
+                Page {currentPage} of {totalPages}
               </span>
             </div>
           </div>
@@ -492,9 +446,9 @@ export default function UserProfilePage() {
             columns={columns}
             data={displayUsers}
             currentPage={currentPage}
-            totalPages={1}
-            totalItems={displayUsers.length}
-            itemsPerPage={displayUsers.length}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            itemsPerPage={itemsPerPage}
             onPageChange={handlePageChange}
           />
         </div>

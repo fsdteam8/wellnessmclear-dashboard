@@ -8,6 +8,7 @@ import { Sidebar } from "@/components/sidebar";
 import Header from "@/components/header";
 import AppProvider from "@/provider/AppProvider";
 import AuthProvider from "@/provider/AuthProvider";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 export const metadata: Metadata = {
   title: "Lawbie - Admin Dashboard",
@@ -20,8 +21,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <AppProvider>
-      <AuthProvider>
+    <AuthProvider>
+      <ProtectedRoute>
+      <AppProvider>
         <Header />
         <div className="flex">
           <Sidebar />
@@ -30,7 +32,8 @@ export default function RootLayout({
         </div>
 
         {/* <Toaster /> */}
-      </AuthProvider>
-    </AppProvider>
+      </AppProvider>
+      </ProtectedRoute>
+    </AuthProvider>
   );
 }

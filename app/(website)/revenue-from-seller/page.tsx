@@ -6,6 +6,7 @@ import { DataTable } from "@/components/data-table"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Loader2 } from "lucide-react"
+import { useSession } from "next-auth/react"
 
 interface RevenueData {
   sellerId: string
@@ -25,48 +26,34 @@ const columns = [
   { key: "revenue", label: "Revenue from Seller" },
 ]
 
-// Fetch function for revenue data
-const fetchRevenueData = async (): Promise<ApiResponse> => {
-  // Get token from localStorage
-  const TOKEN =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2ODNlZDVlYTY0ODUxNzk2MWZlYmQ2OGQiLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE3NDk4ODkzNzgsImV4cCI6MTc1MDQ5NDE3OH0.GkczutuRZ01PJuoWkHzoLx2PB_gBDkEGAfMyiN7-4XI"
-
-  const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/admin/dashboard/revenue-from-seller`, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-      ...(TOKEN && { Authorization: `Bearer ${TOKEN}` }),
-    },
-  })
-
-  if (!response.ok) {
-    switch (response.status) {
-      case 401:
-        // Clear invalid token
-        if (typeof window !== "undefined") {
-          localStorage.removeItem("authToken")
-        }
-        throw new Error("Unauthorized - Please login again")
-      case 403:
-        throw new Error("Forbidden - You do not have permission")
-      case 404:
-        throw new Error("Resource not found")
-      case 500:
-        throw new Error("Internal server error")
-      default:
-        throw new Error(`Request failed with status ${response.status}`)
-    }
-  }
-
-  return response.json()
-}
-
 export default function RevenueFromSellerPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 9
 
-  // Query for revenue data
+  const { data: session } = useSession()
+  const TOKEN = session?.accessToken || ""
+
+  // ✅ Fetch function inside component to access TOKEN
+  const fetchRevenueData = async (): Promise<ApiResponse> => {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/admin/dashboard/revenue-from-seller`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          ...(TOKEN && { Authorization: `Bearer ${TOKEN}` }),
+        },
+      }
+    )
+
+    if (!response.ok) {
+      throw new Error(`Request failed with status ${response.status}`)
+    }
+
+    return response.json()
+  }
+
   const {
     data: revenueData,
     isLoading,
@@ -75,11 +62,11 @@ export default function RevenueFromSellerPage() {
   } = useQuery({
     queryKey: ["revenue-data"],
     queryFn: fetchRevenueData,
-    staleTime: 60 * 1000, // 1 minute
+    staleTime: 60 * 1000,
     refetchOnWindowFocus: false,
+    enabled: !!TOKEN, // Only fetch if token exists
   })
 
-  // Format data for display
   const formattedData =
     revenueData?.data?.map((item, index) => ({
       id: index + 1,
@@ -88,7 +75,6 @@ export default function RevenueFromSellerPage() {
       revenue: `$${item.revenueFromSeller.toFixed(2)}`,
     })) || []
 
-  // Calculate total revenue
   const totalRevenue = revenueData?.data?.reduce((sum, item) => sum + item.revenueFromSeller, 0) || 0
 
   const totalItems = formattedData.length
@@ -121,7 +107,7 @@ export default function RevenueFromSellerPage() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen">
       <div className="flex-1 overflow-auto">
         <div className="p-6">
           <div className="mb-6">
@@ -150,7 +136,7 @@ export default function RevenueFromSellerPage() {
           </Card>
 
           {/* Revenue Table */}
-          <div className="bg-white rounded-lg shadow">
+          <div className="">
             <div className="p-6">
               <h2 className="text-lg font-semibold mb-4">Revenue Details</h2>
 

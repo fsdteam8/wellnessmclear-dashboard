@@ -16,6 +16,7 @@ import { useMutation } from "@tanstack/react-query";
 // Dynamically import ReactQuill to avoid SSR issues
 const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 import "react-quill/dist/quill.snow.css";
+import { useSession } from "next-auth/react";
 
 interface BlogResponse {
   status: boolean;
@@ -36,6 +37,11 @@ export default function AddBlogPage() {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const session = useSession();
+  console.log("session", session);
+
+  const TOKEN = session?.data?.accessToken;
+
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -43,9 +49,6 @@ export default function AddBlogPage() {
 
   const [thumbnail, setThumbnail] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
-  const token =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2ODE0NGFiODkzNjg4NGU0OTY0MzhiNjQiLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE3NTAwNzEyMzQsImV4cCI6MTc1MDY3NjAzNH0.QhLjJp-QP4bn7y15G7tWig6GB8QugvSyez5BMcKqYLc";
-
   // Quill modules configuration
   const modules = {
     toolbar: [
@@ -96,7 +99,7 @@ export default function AddBlogPage() {
         {
           method: "POST",
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${TOKEN}`,
           },
           body: data, // 'data' should be an instance of FormData
         }

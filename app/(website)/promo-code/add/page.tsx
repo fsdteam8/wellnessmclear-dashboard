@@ -24,6 +24,7 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { useSession } from "next-auth/react";
 
 // Types
 type PromoCodeFormData = {
@@ -35,6 +36,12 @@ type PromoCodeFormData = {
   active: boolean;
 };
 
+declare module "next-auth" {
+  interface Session {
+    accessToken?: string;
+  }
+}
+
 type ApiResponse = {
   status: boolean;
   message: string;
@@ -43,7 +50,8 @@ type ApiResponse = {
 
 // API function to create promo code
 const createPromoCode = async (
-  data: PromoCodeFormData
+  data: PromoCodeFormData,
+  token: string
 ): Promise<ApiResponse> => {
   const payload = {
     code: data.code,
@@ -54,16 +62,13 @@ const createPromoCode = async (
     active: data.active,
   };
 
-  const TOKEN =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2ODE0NGFiODkzNjg4NGU0OTY0MzhiNjQiLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE3NDk2MjM3NzQsImV4cCI6MTc1MDIyODU3NH0.sSDAQEhRI6ii7oG05O2mYYaxZoXxFfj0tk52ErnpmSs";
-
   const response = await fetch(
     `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/promo-codes`,
     {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${TOKEN}`,
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(payload),
     }
@@ -82,6 +87,12 @@ export default function AddCodePage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  const { data: session } = useSession();
+  console.log("session", session);
+
+  const accessToken = session?.accessToken;
+  console.log("acc",accessToken)
+
   const [formData, setFormData] = useState<PromoCodeFormData>({
     code: "",
     discountType: "Percentage",
@@ -94,7 +105,12 @@ export default function AddCodePage() {
   const [discountInput, setDiscountInput] = useState("");
 
   const createMutation = useMutation({
-    mutationFn: createPromoCode,
+    mutationFn: (data: PromoCodeFormData) => {
+      if (!accessToken) {
+        throw new Error("No access token available");
+      }
+      return createPromoCode(data, accessToken);
+    },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["promoCodes"] });
 
@@ -162,6 +178,15 @@ export default function AddCodePage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!accessToken) {
+      toast({
+        title: "Authentication Error",
+        description: "Please log in again",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const validationError = validateForm();
     if (validationError) {
       toast({
@@ -176,6 +201,30 @@ export default function AddCodePage() {
   };
 
   const handleCancel = () => router.push("/promo-code");
+
+  // Show loading state if session is loading or if we don't have a token yet
+  if (!session || !accessToken) {
+    return (
+      <div className="flex h-screen">
+        <div className="flex-1 overflow-auto">
+          <div className="p-6">
+            <div className="mb-6 mt-4">
+              <h1 className="text-2xl font-semibold text-gray-900">Add Code</h1>
+              <p className="text-sm text-gray-500">
+                Dashboard &gt; Code &gt; Add Code
+              </p>
+            </div>
+            <div className="flex justify-center items-center h-64">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-600 mx-auto mb-4"></div>
+                <p className="text-lg">Loading...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen">

@@ -25,6 +25,7 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { format, isValid } from "date-fns";
 import { cn } from "@/lib/utils";
+import { useSession } from "next-auth/react";
 
 // Types
 type PromoCodeFormData = {
@@ -89,7 +90,8 @@ const fetchPromoCode = async (id: string): Promise<ApiResponse> => {
 
 const updatePromoCode = async (
   id: string,
-  data: PromoCodeFormData
+  data: PromoCodeFormData,
+  token: string // Add token as parameter
 ): Promise<ApiResponse> => {
   const payload = {
     code: data.code,
@@ -101,14 +103,11 @@ const updatePromoCode = async (
 
   console.log('Update payload:', payload);
 
-  const TOKEN =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2ODE0NGFiODkzNjg4NGU0OTY0MzhiNjQiLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE3NDk2MjM3NzQsImV4cCI6MTc1MDIyODU3NH0.sSDAQEhRI6ii7oG05O2mYYaxZoXxFfj0tk52ErnpmSs";
-
   const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/promo-codes/${id}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${TOKEN}`,
+      Authorization: `Bearer ${token}`, // Use the token parameter
     },
     body: JSON.stringify(payload),
   });
@@ -133,6 +132,9 @@ export default function EditCodePage() {
   const queryClient = useQueryClient();
   const codeId = params.id as string;
 
+  const { data: session } = useSession(); // Destructure properly
+  console.log("session", session);
+
   const [formData, setFormData] = useState<PromoCodeFormData>({
     code: "",
     discount: 0,
@@ -147,7 +149,13 @@ export default function EditCodePage() {
   const updateMutation = useMutation({
     mutationFn: (data: PromoCodeFormData) => {
       console.log('Mutation called with data:', data);
-      return updatePromoCode(codeId, data);
+      
+      // Check if token exists
+      if (!session?.accessToken) {
+        throw new Error('Authentication token not found. Please log in again.');
+      }
+      
+      return updatePromoCode(codeId, data, session.accessToken);
     },
     onSuccess: (data) => {
       console.log('Update successful:', data);
@@ -318,6 +326,16 @@ export default function EditCodePage() {
     
     console.log('Form submitted with data:', formData);
 
+    // Check authentication before validation
+    if (!session?.accessToken) {
+      toast({
+        title: "Authentication Error",
+        description: "You are not authenticated. Please log in again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const errors = validateForm();
     setFormErrors(errors);
 
@@ -345,6 +363,7 @@ export default function EditCodePage() {
     return format(date, "dd / MM / yyyy");
   };
 
+  // Show loading if session is loading or data is loading
   if (isLoadingData) {
     return (
       <div className="flex h-screen bg-gray-100">
@@ -540,7 +559,7 @@ export default function EditCodePage() {
                 </Button>
                 <Button
                   type="submit"
-                  disabled={updateMutation.isPending}
+                  disabled={updateMutation.isPending || !session?.accessToken}
                   className="bg-slate-700 hover:bg-slate-800 text-white h-[45px] w-[150px]"
                 >
                   <Save className="h-4 w-4 mr-2" />

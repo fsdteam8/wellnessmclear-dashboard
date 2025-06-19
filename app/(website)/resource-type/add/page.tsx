@@ -9,13 +9,20 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Save } from "lucide-react";
 import { toast } from "sonner";
+import { useSession } from "next-auth/react";
 
-// Static token
-const TOKEN =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2ODE0NGFiODkzNjg4NGU0OTY0MzhiNjQiLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE3NDk2MjM3NzQsImV4cCI6MTc1MDIyODU3NH0.sSDAQEhRI6ii7oG05O2mYYaxZoXxFfj0tk52ErnpmSs";
-
+declare module "next-auth" {
+  interface Session {
+    accessToken?: string;
+  }
+}
 export default function AddResourceTypePage() {
   const router = useRouter();
+
+  const session = useSession();
+  console.log("session", session);
+
+  const TOKEN = session?.data?.accessToken;
 
   const [formData, setFormData] = useState({
     resourceTypeName: "",
@@ -45,7 +52,7 @@ export default function AddResourceTypePage() {
     },
     onSuccess: (data) => {
       toast.success(data.message || "Resource type created successfully!");
-      router.push("/resource-type"); 
+      router.push("/resource-type");
     },
     onError: (error: unknown) => {
       const errMsg =
@@ -87,7 +94,10 @@ export default function AddResourceTypePage() {
                   placeholder="Type resource name here..."
                   value={formData.resourceTypeName}
                   onChange={(e) =>
-                    setFormData({ ...formData, resourceTypeName: e.target.value })
+                    setFormData({
+                      ...formData,
+                      resourceTypeName: e.target.value,
+                    })
                   }
                   className="mt-3 h-[50px] border border-[#707070]"
                 />

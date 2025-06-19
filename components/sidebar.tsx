@@ -83,7 +83,7 @@ export function Sidebar() {
       </nav>
 
       {/* Logout */}
-      <div className="p-3 cursor-pointer" onClick={() => signOut()}>
+      <div className="p-3 cursor-pointer" onClick={() => signOut({ callbackUrl: "/login" })}>
         <p className="flex items-center space-x-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-600 hover:text-white">
           <LogOut className="h-5 w-5" />
           <span>Log Out</span>

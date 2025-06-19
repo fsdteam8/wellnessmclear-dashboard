@@ -55,7 +55,7 @@ export default function SignInForm() {
         toast.error(result.error);
       } else {
         toast.success("Login successful! Welcome back.");
-        router.push("/dashboard");
+        router.push("/");
         router.refresh();
       }
     } catch (error) {

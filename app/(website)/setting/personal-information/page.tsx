@@ -14,6 +14,8 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Calendar, PenLine, Save, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useSession } from "next-auth/react";
+// import { useSession } from "next-auth/react";
 
 export default function PersonalInformationPage() {
   const { toast } = useToast();
@@ -28,6 +30,9 @@ export default function PersonalInformationPage() {
     address: "00000 Artesia Blvd, Suite A-000",
   });
   const [isLoading, setIsLoading] = useState(false);
+
+  const {data, status} = useSession();
+  console.log("session", data, status)
 
   const handleUpdateProfile = () => {
     setIsEditing(true);

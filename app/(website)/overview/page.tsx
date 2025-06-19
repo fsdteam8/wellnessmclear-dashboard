@@ -171,24 +171,6 @@ export default function Dashboard() {
     }
   )
 
-  // Get the legend labels based on selected period
-  // const getLegendLabels = () => {
-  //   switch (selectedOwnRevenuePeriod) {
-  //     case "day":
-  //       return { current: "This Day", previous: "Last Day" }
-  //     case "week":
-  //       return { current: "This Week", previous: "Last Week" }
-  //     case "month":
-  //       return { current: "This Month", previous: "Last Month" }
-  //     case "year":
-  //       return { current: "This Year", previous: "Last Year" }
-  //     default:
-  //       return { current: "This Month", previous: "Last Month" }
-  //   }
-  // }
-
-  // const legendLabels = getLegendLabels()
-
   // Transform product sell data for pie chart
   const productSellData =
     summaryData.productSell?.map((item, index) => ({

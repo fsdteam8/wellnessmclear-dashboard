@@ -9,6 +9,50 @@ import Image from "next/image"
 import type { Blog, BlogColumn } from "@/type/types"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useSession } from "next-auth/react"
+import noImage from "@/public/images/NoImage.png";
+
+// Custom Image component with fallback
+const ImageWithFallback = ({ 
+  src, 
+  alt, 
+  width, 
+  height, 
+  className 
+}: { 
+  src: string | null | undefined;
+  alt: string;
+  width: number;
+  height: number;
+  className?: string;
+}) => {
+  const [imgSrc, setImgSrc] = useState<string>(() => {
+    // Check if src exists and is not empty/whitespace
+    if (src && src.trim()) {
+      return src.trim();
+    }
+    return noImage.src || "/images/NoImage.png";
+  });
+  
+  const [hasError, setHasError] = useState(false);
+
+  const handleError = () => {
+    if (!hasError) {
+      setHasError(true);
+      setImgSrc(noImage.src || "/images/NoImage.png");
+    }
+  };
+
+  return (
+    <Image
+      src={imgSrc}
+      alt={alt}
+      width={width}
+      height={height}
+      className={className}
+      onError={handleError}
+    />
+  );
+};
 
 // Helper function to strip HTML tags and get plain text
 const stripHtml = (html: string): string => {
@@ -37,8 +81,8 @@ const columns: BlogColumn[] = [
     render: (value: unknown, row: Blog) => (
       <div className="flex items-start space-x-3 max-w-md">
         <div className="w-[100px] h-[60px]">
-          <Image
-            src={row.thumbnail || "/images/NoImage.webp"}
+          <ImageWithFallback
+            src={row.thumbnail}
             alt="Blog thumbnail"
             width={80}
             height={60}

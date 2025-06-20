@@ -18,7 +18,8 @@ import { SquareArrowOutUpRight } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useSession } from "next-auth/react";
-import {  PuffLoader } from "react-spinners";
+import { PuffLoader } from "react-spinners";
+import Link from "next/link";
 
 // Extend Session type to include accessToken
 // import type { Session } from "next-auth"
@@ -226,17 +227,17 @@ export default function Dashboard() {
   if (isLoading)
     return (
       <div className="flex h-screen items-center justify-center bg-gray-50">
-      <div className="text-center">
-        {/* Optional: Remove this if you only want MoonLoader */}
-        {/* <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-600 mx-auto mb-4"></div> */}
-        <PuffLoader
-  color="rgba(49, 23, 215, 1)"
-  cssOverride={{}}
-  loading
-  speedMultiplier={1}
-/>
+        <div className="text-center">
+          {/* Optional: Remove this if you only want MoonLoader */}
+          {/* <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-600 mx-auto mb-4"></div> */}
+          <PuffLoader
+            color="rgba(49, 23, 215, 1)"
+            cssOverride={{}}
+            loading
+            speedMultiplier={1}
+          />
+        </div>
       </div>
-    </div>
     );
   if (isError)
     return (
@@ -505,7 +506,7 @@ export default function Dashboard() {
                   >
                     Month
                   </Button>
-                  <Button
+                  {/* <Button
                     variant={
                       selectedPeriod === "thisYear" ? "default" : "outline"
                     }
@@ -513,7 +514,7 @@ export default function Dashboard() {
                     onClick={() => setSelectedPeriod("thisYear")}
                   >
                     Year
-                  </Button>
+                  </Button> */}
                 </div>
               </CardTitle>
             </CardHeader>
@@ -567,12 +568,14 @@ export default function Dashboard() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg">Product Sell</CardTitle>
-                <Button className="text-[#3B82F6]" variant="link" size="sm">
-                  View Details
-                  <span>
-                    <SquareArrowOutUpRight />
-                  </span>
-                </Button>
+                <Link href="/resource-list">
+                  <Button className="text-[#3B82F6]" variant="link" size="sm">
+                    View Details
+                    <span>
+                      <SquareArrowOutUpRight />
+                    </span>
+                  </Button>
+                </Link>
               </div>
             </CardHeader>
             <CardContent>

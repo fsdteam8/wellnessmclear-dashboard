@@ -18,6 +18,50 @@ import type { ResourceRequest, ResourceColumn, Seller } from "@/type/types";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
 import { PuffLoader } from "react-spinners";
+import noImage from "@/public/images/NoImage.png";
+
+// Custom Image component with fallback
+const ImageWithFallback = ({ 
+  src, 
+  alt, 
+  width, 
+  height, 
+  className 
+}: { 
+  src: string | null | undefined;
+  alt: string;
+  width: number;
+  height: number;
+  className?: string;
+}) => {
+  const [imgSrc, setImgSrc] = useState<string>(() => {
+    // Check if src exists and is not empty/whitespace
+    if (src && src.trim()) {
+      return src.trim();
+    }
+    return noImage.src || "/images/NoImage.png";
+  });
+  
+  const [hasError, setHasError] = useState(false);
+
+  const handleError = () => {
+    if (!hasError) {
+      setHasError(true);
+      setImgSrc(noImage.src || "/images/NoImage.png");
+    }
+  };
+
+  return (
+    <Image
+      src={imgSrc}
+      alt={alt}
+      width={width}
+      height={height}
+      className={className}
+      onError={handleError}
+    />
+  );
+};
 
 // Updated interfaces to match API response
 interface ApiResourceRequest {
@@ -239,12 +283,12 @@ export default function RequestResourcePage() {
       label: "Resource Name",
       render: (value: unknown, row: ResourceRequest) => (
         <div className="flex items-center space-x-3">
-          <Image
-            src={row.thumbnail || "/placeholder.svg"}
+          <ImageWithFallback
+            src={row.thumbnail}
             alt="Resource thumbnail"
             width={40}
             height={40}
-            className="rounded"
+            className="rounded object-cover"
           />
           <span className="max-w-xs truncate">{String(value)}</span>
         </div>
@@ -321,15 +365,15 @@ export default function RequestResourcePage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-  <div className="text-center">
-    <PuffLoader
-      color="rgba(49, 23, 215, 1)"
-      loading
-      speedMultiplier={1}
-      size={60}
-    />
-  </div>
-</div>
+        <div className="text-center">
+          <PuffLoader
+            color="rgba(49, 23, 215, 1)"
+            loading
+            speedMultiplier={1}
+            size={60}
+          />
+        </div>
+      </div>
     );
   }
 

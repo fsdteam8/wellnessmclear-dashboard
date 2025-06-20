@@ -180,13 +180,13 @@ const columns: TableColumn[] = [
       const status = getStatus(row.active, row.expiryDate);
       return (
         <Badge
-          variant={status === "Active" ? "default" : "secondary"}
+          variant={status === "Active" ? "secondary" : "secondary"}
           className={
             status === "Active"
-              ? "bg-[#008000] text-white border border-green-200"
+              ? "bg-[#7ed47e] text-black border border-red-300"
               : status === "Inactive"
-              ? "bg-[#FFA300] text-white border border-yellow-200"
-              : "bg-red-500 text-white border border-red-200"
+              ? "bg-[#FFA300] text-black border border-yellow-400"
+              : "bg-red-500 text-black border border-red-300"
           }
         >
           {status}

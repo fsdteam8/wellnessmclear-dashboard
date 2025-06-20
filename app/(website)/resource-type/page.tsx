@@ -166,7 +166,7 @@ export default function ResourceTypePage() {
           </div>
 
           {isLoading ? (
-            <div className="flex h-screen items-center justify-center bg-gray-50">
+            <div className="flex h-[60vh] items-center justify-center bg-gray-50">
               <div className="text-center">
                 {/* Optional: Remove this if you only want MoonLoader */}
                 {/* <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-600 mx-auto mb-4"></div> */}

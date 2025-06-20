@@ -8,6 +8,7 @@ import { DataTable } from "@/components/data-table"
 import Image from "next/image"
 import type { Blog, BlogColumn } from "@/type/types"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { useSession } from "next-auth/react"
 
 // Helper function to strip HTML tags and get plain text
 const stripHtml = (html: string): string => {
@@ -80,11 +81,14 @@ export default function BlogManagementPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
 
+  const session = useSession();
+  console.log("session", session);
+
+  const TOKEN = session?.data?.accessToken;
+
   // Set up query client for cache invalidation
   const queryClient = useQueryClient()
-  const token =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2ODE0NGFiODkzNjg4NGU0OTY0MzhiNjQiLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE3NDkwMzY1NzQsImV4cCI6MTc0OTY0MTM3NH0.XyD7AImvYdvYPTkVMQr5WpGR1sDs4HjibnwKcBOSjQA"
-
+  
   const {
     data: blogsResponse,
     isLoading,
@@ -108,7 +112,7 @@ export default function BlogManagementPage() {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${TOKEN}`,
         },
       })
 

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -10,12 +9,19 @@ import { Badge } from "@/components/ui/badge";
 // import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { useSession } from "next-auth/react";
 
 interface PracticeArea {
   _id: string;
   name: string;
   description: string;
   createdAt: string;
+}
+
+declare module "next-auth" {
+  interface Session {
+    accessToken?: string;
+  }
 }
 
 interface Column {
@@ -30,12 +36,12 @@ const columns: Column[] = [
     label: "Name",
     render: (value) => (
       // <Link href={`/practice-area/${row._id}`} passHref>
-        <Badge
-          variant="secondary"
-          className="bg-slate-600 text-white px-4 py-2 cursor-pointer hover:bg-slate-500 transition-colors w-[200px]"
-        >
-          {(value as string).slice(0, 20)}
-        </Badge>
+      <Badge
+        variant="secondary"
+        className="bg-slate-600 text-white px-4 py-2 cursor-pointer hover:bg-slate-500 transition-colors w-[200px]"
+      >
+        {(value as string).slice(0, 20)}
+      </Badge>
       // </Link>
     ),
   },
@@ -60,17 +66,16 @@ export default function CategoriesPage() {
   // const { toast } = useToast();
   const [currentPage, setCurrentPage] = useState<number>(1);
   const itemsPerPage = 10;
-  const TOKEN =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2ODE0NGFiODkzNjg4NGU0OTY0MzhiNjQiLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE3NDk2MjM3NzQsImV4cCI6MTc1MDIyODU3NH0.sSDAQEhRI6ii7oG05O2mYYaxZoXxFfj0tk52ErnpmSs"
+
+  const session = useSession();
+  console.log("session", session);
+
+  const TOKEN = session?.data?.accessToken;
 
   // Set up query client for cache invalidation
   const queryClient = useQueryClient();
 
-  const {
-    data,
-    isLoading,
-    isError,
-  } = useQuery<PracticeArea[]>({
+  const { data, isLoading, isError } = useQuery<PracticeArea[]>({
     queryKey: ["practice-data"],
     queryFn: async () => {
       const res = await fetch(
@@ -90,7 +95,7 @@ export default function CategoriesPage() {
     },
   });
 
-  console.log("data", data)
+  console.log("data", data);
   // Set up delete mutation with TanStack Query
   const deleteMutation = useMutation({
     mutationFn: async (practiceArea: PracticeArea) => {
@@ -116,12 +121,12 @@ export default function CategoriesPage() {
     onSuccess: () => {
       // Invalidate and refetch the data after successful deletion
       queryClient.invalidateQueries({ queryKey: ["practice-data"] });
-      
+
       // toast({
       //   title: "Success",
       //   description: `Practice area "${deletedPracticeArea.name}" deleted successfully`,
       // });
-      toast.success("Practice area  deleted successfully!")
+      toast.success("Practice area  deleted successfully!");
     },
     onError: (error) => {
       console.error("Delete failed:", error);
@@ -130,7 +135,7 @@ export default function CategoriesPage() {
       //   description: `Failed to delete practice area "${deletedPracticeArea.name}". ${error.message}`,
       //   variant: "destructive",
       // });
-      toast.error(error.message)
+      toast.error(error.message);
     },
   });
 
@@ -171,7 +176,9 @@ export default function CategoriesPage() {
               title="Practice Areas List"
               buttonText="Add Practice Area"
             />
-            <p className="text-gray-500 -mt-4">Dashboard &gt; Practice_Areas_List</p>
+            <p className="text-gray-500 -mt-4">
+              Dashboard &gt; Practice_Areas_List
+            </p>
           </div>
 
           {isLoading ? (

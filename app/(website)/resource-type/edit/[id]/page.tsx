@@ -1,31 +1,40 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { useRouter, useParams } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
-import { toast } from "sonner"
+import { useEffect, useState } from "react";
+import { useRouter, useParams } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
+import { useSession } from "next-auth/react";
+
+declare module "next-auth" {
+  interface Session {
+    accessToken?: string;
+  }
+}
 
 export default function EditResourceTypePage() {
-  const router = useRouter()
-  const params = useParams()
-  const categoryId = params.id as string
+  const router = useRouter();
+  const params = useParams();
+  const categoryId = params.id as string;
 
-  const TOKEN =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2ODE0NGFiODkzNjg4NGU0OTY0MzhiNjQiLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE3NDk2MjM3NzQsImV4cCI6MTc1MDIyODU3NH0.sSDAQEhRI6ii7oG05O2mYYaxZoXxFfj0tk52ErnpmSs"
+  const session = useSession();
+  console.log("session", session);
+
+  const TOKEN = session?.data?.accessToken;
 
   const [formData, setFormData] = useState({
     resourceTypeName: "",
     description: "",
-  })
-  const [isLoading, setIsLoading] = useState(false)
-  const [isLoadingData, setIsLoadingData] = useState(true)
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingData, setIsLoadingData] = useState(true);
 
   useEffect(() => {
     const fetchCategory = async () => {
-      setIsLoadingData(true)
+      setIsLoadingData(true);
       try {
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/resource-type/${categoryId}`,
@@ -35,40 +44,40 @@ export default function EditResourceTypePage() {
               "Content-Type": "application/json",
             },
           }
-        )
-        if (!res.ok) throw new Error("Resource not found")
-        const json = await res.json()
-    console.log('json', json)
+        );
+        if (!res.ok) throw new Error("Resource not found");
+        const json = await res.json();
+        console.log("json", json);
         setFormData({
           resourceTypeName: json.data.resourceTypeName,
           description: json.data.description,
-        })
+        });
       } catch (error) {
         if (error instanceof Error) {
-          toast.error(error.message)
+          toast.error(error.message);
         } else {
-          toast.error("Failed to load Resource Type")
+          toast.error("Failed to load Resource Type");
         }
-        router.push("/resource-type")
+        router.push("/resource-type");
       } finally {
-        setIsLoadingData(false)
+        setIsLoadingData(false);
       }
-    }
+    };
 
     if (categoryId) {
-      fetchCategory()
+      fetchCategory();
     }
-  }, [categoryId, router])
+  }, [categoryId, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (!formData.resourceTypeName.trim()) {
-      toast.error("Resource Type name is required")
-      return
+      toast.error("Resource Type name is required");
+      return;
     }
 
-    setIsLoading(true)
+    setIsLoading(true);
 
     try {
       const res = await fetch(
@@ -84,30 +93,29 @@ export default function EditResourceTypePage() {
             description: formData.description,
           }),
         }
-      )
+      );
 
-      if (!res.ok) throw new Error("Failed to update Resource Type")
+      if (!res.ok) throw new Error("Failed to update Resource Type");
 
-      toast.success("Resource Type updated successfully")
-      
+      toast.success("Resource Type updated successfully");
 
       setTimeout(() => {
-        router.push("/resource-type")
-      }, 2000)
+        router.push("/resource-type");
+      }, 2000);
     } catch (error) {
       if (error instanceof Error) {
-        toast.error(error.message)
+        toast.error(error.message);
       } else {
-        toast.error("Failed to update Resource Type")
+        toast.error("Failed to update Resource Type");
       }
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleCancel = () => {
-    router.push("/resource-type")
-  }
+    router.push("/resource-type");
+  };
 
   if (isLoadingData) {
     return (
@@ -119,7 +127,7 @@ export default function EditResourceTypePage() {
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -146,7 +154,10 @@ export default function EditResourceTypePage() {
                   placeholder="Type resource type name here..."
                   value={formData.resourceTypeName}
                   onChange={(e) =>
-                    setFormData({ ...formData, resourceTypeName: e.target.value })
+                    setFormData({
+                      ...formData,
+                      resourceTypeName: e.target.value,
+                    })
                   }
                   className="mt-3 h-[49px] border border-[#707070]"
                 />
@@ -182,5 +193,5 @@ export default function EditResourceTypePage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

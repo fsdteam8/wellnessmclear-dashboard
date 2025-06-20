@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DataTable } from "@/components/data-table";
 import { Card, CardContent } from "@/components/ui/card";
+import { useSession } from "next-auth/react";
 
 interface ApiUser {
   id: string;
@@ -40,16 +41,14 @@ interface DisplayUser {
   cancelOrder: number;
 }
 
-const TOKEN =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2ODE0NGFiODkzNjg4NGU0OTY0MzhiNjQiLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE3NDk2MjM3NzQsImV4cCI6MTc1MDIyODU3NH0.sSDAQEhRI6ii7oG05O2mYYaxZoXxFfj0tk52ErnpmSs";
-
-const fetchUsers = async (page: number = 1): Promise<ApiResponse> => {
+// ✅ Use token from session dynamically
+const fetchUsers = async (page: number = 1, token?: string): Promise<ApiResponse> => {
   const response = await fetch(
     `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/user/all-profiles?page=${page}`,
     {
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${TOKEN}`,
+        Authorization: `Bearer ${token}`,
       },
     }
   );
@@ -62,7 +61,7 @@ const fetchUsers = async (page: number = 1): Promise<ApiResponse> => {
 };
 
 const transformUsers = (apiUsers: ApiUser[]): DisplayUser[] => {
-  const transformed = apiUsers.map((user) => ({
+  return apiUsers.map((user) => ({
     id: user.id,
     userId: user.id,
     name: user.name,
@@ -72,9 +71,6 @@ const transformUsers = (apiUsers: ApiUser[]): DisplayUser[] => {
     pendingOrder: user.pendingOrders,
     cancelOrder: user.cancelledOrders,
   }));
-  
-  console.log("Transformed Display Users:", transformed);
-  return transformed;
 };
 
 const columns = [
@@ -116,6 +112,8 @@ const columns = [
 
 export default function UserProfilePage() {
   const [currentPage, setCurrentPage] = useState(1);
+  const session = useSession();
+  const token = session?.data?.accessToken;
 
   const {
     data: apiResponse,
@@ -124,21 +122,18 @@ export default function UserProfilePage() {
     error,
   } = useQuery({
     queryKey: ["users", currentPage],
-    queryFn: () => fetchUsers(currentPage),
+    queryFn: () => fetchUsers(currentPage, token),
+    enabled: !!token, // ✅ only run when token is available
     staleTime: 5 * 60 * 1000,
   });
 
   const displayUsers = apiResponse ? transformUsers(apiResponse.data) : [];
 
-  // Get pagination info from API response or use defaults
-  const totalPages = apiResponse?.pagination?.totalPages || Math.ceil(displayUsers.length / 10);
+  const totalPages = apiResponse?.pagination?.totalPages || 1;
   const totalItems = apiResponse?.pagination?.totalItems || displayUsers.length;
   const itemsPerPage = apiResponse?.pagination?.itemsPerPage || 10;
 
-  const totalSales = displayUsers.reduce(
-    (sum, user) => sum + user.totalOrder * 65.5,
-    0
-  );
+  const totalSales = displayUsers.reduce((sum, user) => sum + user.totalOrder * 65.5, 0);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -160,7 +155,7 @@ export default function UserProfilePage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-600 mb-4">
-            Error loading users: {error?.message}
+            Error loading users: {error instanceof Error ? error.message : "Unknown error"}
           </p>
           <Button
             onClick={() => window.location.reload()}
@@ -180,9 +175,7 @@ export default function UserProfilePage() {
           <div className="flex items-center justify-between mb-6">
             <div>
               <div className="mt-4">
-                <h1 className="text-2xl font-semibold text-gray-900">
-                  User Profile
-                </h1>
+                <h1 className="text-2xl font-semibold text-gray-900">User Profile</h1>
                 <p className="text-gray-500">Dashboard User Profile</p>
               </div>
             </div>

@@ -26,6 +26,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { format, isValid } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useSession } from "next-auth/react";
+import { PuffLoader } from "react-spinners";
 
 // Types
 type PromoCodeFormData = {
@@ -59,7 +60,7 @@ type ApiResponse = {
 // Utility function to safely create a Date object
 const createSafeDate = (dateString: string): Date | undefined => {
   if (!dateString) return undefined;
-  
+
   const date = new Date(dateString);
   return isValid(date) ? date : undefined;
 };
@@ -67,24 +68,31 @@ const createSafeDate = (dateString: string): Date | undefined => {
 // API Functions
 const fetchPromoCode = async (id: string): Promise<ApiResponse> => {
   console.log(`Fetching promo code with ID: ${id}`);
-  
-  const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/promo-codes/${id}`, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-    },
-  });
 
-  console.log('Fetch response status:', response.status);
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/promo-codes/${id}`,
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }
+  );
+
+  console.log("Fetch response status:", response.status);
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
-    console.error('Fetch error:', errorData);
-    throw new Error(errorData.message || `Failed to fetch promo code (${response.status})`);
+    const errorData = await response
+      .json()
+      .catch(() => ({ message: "Unknown error" }));
+    console.error("Fetch error:", errorData);
+    throw new Error(
+      errorData.message || `Failed to fetch promo code (${response.status})`
+    );
   }
 
   const data = await response.json();
-  console.log('Fetched data:', data);
+  console.log("Fetched data:", data);
   return data;
 };
 
@@ -101,27 +109,34 @@ const updatePromoCode = async (
     active: data.status === "Active",
   };
 
-  console.log('Update payload:', payload);
+  console.log("Update payload:", payload);
 
-  const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/promo-codes/${id}`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`, // Use the token parameter
-    },
-    body: JSON.stringify(payload),
-  });
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/promo-codes/${id}`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`, // Use the token parameter
+      },
+      body: JSON.stringify(payload),
+    }
+  );
 
-  console.log('Update response status:', response.status);
+  console.log("Update response status:", response.status);
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
-    console.error('Update error:', errorData);
-    throw new Error(errorData.message || `Failed to update promo code (${response.status})`);
+    const errorData = await response
+      .json()
+      .catch(() => ({ message: "Unknown error" }));
+    console.error("Update error:", errorData);
+    throw new Error(
+      errorData.message || `Failed to update promo code (${response.status})`
+    );
   }
 
   const result = await response.json();
-  console.log('Update result:', result);
+  console.log("Update result:", result);
   return result;
 };
 
@@ -148,17 +163,17 @@ export default function EditCodePage() {
   // Update mutation
   const updateMutation = useMutation({
     mutationFn: (data: PromoCodeFormData) => {
-      console.log('Mutation called with data:', data);
-      
+      console.log("Mutation called with data:", data);
+
       // Check if token exists
       if (!session?.accessToken) {
-        throw new Error('Authentication token not found. Please log in again.');
+        throw new Error("Authentication token not found. Please log in again.");
       }
-      
+
       return updatePromoCode(codeId, data, session.accessToken);
     },
     onSuccess: (data) => {
-      console.log('Update successful:', data);
+      console.log("Update successful:", data);
       queryClient.invalidateQueries({ queryKey: ["promoCodes"] });
 
       toast({
@@ -169,7 +184,7 @@ export default function EditCodePage() {
       router.push("/promo-code");
     },
     onError: (error: Error) => {
-      console.error('Update failed:', error);
+      console.error("Update failed:", error);
       toast({
         title: "Error",
         description: error.message || "Failed to update promo code",
@@ -193,10 +208,10 @@ export default function EditCodePage() {
       setIsLoadingData(true);
       try {
         const response = await fetchPromoCode(codeId);
-        
+
         if (response.status && response.data) {
           const promoCode = response.data;
-          
+
           const expiryDate = createSafeDate(promoCode.expiryDate);
 
           console.log("Original expiryDate:", promoCode.expiryDate);
@@ -213,7 +228,8 @@ export default function EditCodePage() {
           if (!expiryDate) {
             toast({
               title: "Warning",
-              description: "Expiry date could not be parsed correctly. Please verify the date before saving.",
+              description:
+                "Expiry date could not be parsed correctly. Please verify the date before saving.",
               variant: "destructive",
             });
           }
@@ -224,7 +240,10 @@ export default function EditCodePage() {
         console.error("Error loading promo code:", error);
         toast({
           title: "Error",
-          description: error instanceof Error ? error.message : "Failed to load promo code data",
+          description:
+            error instanceof Error
+              ? error.message
+              : "Failed to load promo code data",
           variant: "destructive",
         });
         router.push("/promo-code");
@@ -269,19 +288,20 @@ export default function EditCodePage() {
       ...prev,
       code: cleanedValue,
     }));
-    
+
     if (formErrors.code) {
-      setFormErrors(prev => ({ ...prev, code: "" }));
+      setFormErrors((prev) => ({ ...prev, code: "" }));
     }
   };
 
   const handleDiscountChange = (value: string) => {
     const cleanedValue = value.replace(/[^0-9.]/g, "");
-    
-    const parts = cleanedValue.split('.');
-    const formattedValue = parts.length > 2 
-      ? parts[0] + '.' + parts.slice(1).join('') 
-      : cleanedValue;
+
+    const parts = cleanedValue.split(".");
+    const formattedValue =
+      parts.length > 2
+        ? parts[0] + "." + parts.slice(1).join("")
+        : cleanedValue;
 
     const numericValue = parseFloat(formattedValue);
 
@@ -296,9 +316,9 @@ export default function EditCodePage() {
         discount: 0,
       }));
     }
-    
+
     if (formErrors.discount) {
-      setFormErrors(prev => ({ ...prev, discount: "" }));
+      setFormErrors((prev) => ({ ...prev, discount: "" }));
     }
   };
 
@@ -308,9 +328,9 @@ export default function EditCodePage() {
       ...prev,
       usageLimit: numericValue,
     }));
-    
+
     if (formErrors.usageLimit) {
-      setFormErrors(prev => ({ ...prev, usageLimit: "" }));
+      setFormErrors((prev) => ({ ...prev, usageLimit: "" }));
     }
   };
 
@@ -323,8 +343,8 @@ export default function EditCodePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    console.log('Form submitted with data:', formData);
+
+    console.log("Form submitted with data:", formData);
 
     // Check authentication before validation
     if (!session?.accessToken) {
@@ -348,7 +368,7 @@ export default function EditCodePage() {
       return;
     }
 
-    console.log('Form validation passed, calling mutation...');
+    console.log("Form validation passed, calling mutation...");
     updateMutation.mutate(formData);
   };
 
@@ -366,12 +386,16 @@ export default function EditCodePage() {
   // Show loading if session is loading or data is loading
   if (isLoadingData) {
     return (
-      <div className="flex h-screen bg-gray-100">
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading promo code...</p>
-          </div>
+      <div className="flex h-[60Vh] items-center justify-center bg-gray-50">
+        <div className="text-center">
+          {/* Optional: Remove this if you only want MoonLoader */}
+          {/* <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-600 mx-auto mb-4"></div> */}
+          <PuffLoader
+            color="rgba(49, 23, 215, 1)"
+            cssOverride={{}}
+            loading
+            speedMultiplier={1}
+          />
         </div>
       </div>
     );
@@ -391,7 +415,9 @@ export default function EditCodePage() {
 
           <div className="mb-6 mt-4">
             <h1 className="text-2xl font-semibold text-gray-900">Edit Code</h1>
-            <p className="text-sm text-gray-500">Dashboard &gt; Code &gt; Edit Code</p>
+            <p className="text-sm text-gray-500">
+              Dashboard &gt; Code &gt; Edit Code
+            </p>
           </div>
 
           <div className="">
@@ -418,7 +444,9 @@ export default function EditCodePage() {
                     disabled={updateMutation.isPending}
                   />
                   {formErrors.code && (
-                    <p className="text-red-500 text-sm mt-1">{formErrors.code}</p>
+                    <p className="text-red-500 text-sm mt-1">
+                      {formErrors.code}
+                    </p>
                   )}
                 </div>
 
@@ -436,7 +464,9 @@ export default function EditCodePage() {
                     onChange={(e) => handleDiscountChange(e.target.value)}
                     className={cn(
                       "h-[60px] border-[1px]",
-                      formErrors.discount ? "border-red-500" : "border-[#707070]"
+                      formErrors.discount
+                        ? "border-red-500"
+                        : "border-[#707070]"
                     )}
                     placeholder="e.g., 50 or 10.5"
                     min="0"
@@ -444,7 +474,9 @@ export default function EditCodePage() {
                     disabled={updateMutation.isPending}
                   />
                   {formErrors.discount && (
-                    <p className="text-red-500 text-sm mt-1">{formErrors.discount}</p>
+                    <p className="text-red-500 text-sm mt-1">
+                      {formErrors.discount}
+                    </p>
                   )}
                 </div>
               </div>
@@ -464,7 +496,9 @@ export default function EditCodePage() {
                         variant="ghost"
                         className={cn(
                           "w-full justify-start text-left font-normal border rounded-md h-[60px]",
-                          formErrors.expiryDate ? "border-red-500" : "border-[#707070]",
+                          formErrors.expiryDate
+                            ? "border-red-500"
+                            : "border-[#707070]",
                           !formData.expiryDate && "text-muted-foreground"
                         )}
                         disabled={updateMutation.isPending}
@@ -484,7 +518,10 @@ export default function EditCodePage() {
                         onSelect={(date) => {
                           setFormData({ ...formData, expiryDate: date });
                           if (formErrors.expiryDate) {
-                            setFormErrors(prev => ({ ...prev, expiryDate: "" }));
+                            setFormErrors((prev) => ({
+                              ...prev,
+                              expiryDate: "",
+                            }));
                           }
                         }}
                         disabled={(date) =>
@@ -495,7 +532,9 @@ export default function EditCodePage() {
                     </PopoverContent>
                   </Popover>
                   {formErrors.expiryDate && (
-                    <p className="text-red-500 text-sm mt-1">{formErrors.expiryDate}</p>
+                    <p className="text-red-500 text-sm mt-1">
+                      {formErrors.expiryDate}
+                    </p>
                   )}
                 </div>
 
@@ -513,14 +552,18 @@ export default function EditCodePage() {
                     onChange={(e) => handleUsageLimitChange(e.target.value)}
                     className={cn(
                       "h-[60px] border-[1px]",
-                      formErrors.usageLimit ? "border-red-500" : "border-[#707070]"
+                      formErrors.usageLimit
+                        ? "border-red-500"
+                        : "border-[#707070]"
                     )}
                     placeholder="100"
                     min="1"
                     disabled={updateMutation.isPending}
                   />
                   {formErrors.usageLimit && (
-                    <p className="text-red-500 text-sm mt-1">{formErrors.usageLimit}</p>
+                    <p className="text-red-500 text-sm mt-1">
+                      {formErrors.usageLimit}
+                    </p>
                   )}
                 </div>
 
@@ -570,14 +613,14 @@ export default function EditCodePage() {
           </div>
 
           {updateMutation.isPending && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-white p-6 rounded-lg shadow-lg">
-                <div className="flex items-center space-x-4">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-700"></div>
-                  <span className="text-lg font-medium">
-                    Updating promo code...
-                  </span>
-                </div>
+            <div className="fixed inset-0 bg-black bg-opacity-20 flex justify-center items-center z-50">
+              <div className="text-center">
+                <PuffLoader
+                  color="rgba(49, 23, 215, 1)"
+                  loading
+                  speedMultiplier={1}
+                  size={60}
+                />
               </div>
             </div>
           )}

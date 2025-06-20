@@ -18,6 +18,7 @@ import { SquareArrowOutUpRight } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useSession } from "next-auth/react";
+import {  PuffLoader } from "react-spinners";
 
 // Extend Session type to include accessToken
 // import type { Session } from "next-auth"
@@ -224,9 +225,18 @@ export default function Dashboard() {
 
   if (isLoading)
     return (
-      <div className="flex items-center justify-center h-screen">
-        <p className="text-lg">Loading...</p>
+      <div className="flex h-screen items-center justify-center bg-gray-50">
+      <div className="text-center">
+        {/* Optional: Remove this if you only want MoonLoader */}
+        {/* <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-600 mx-auto mb-4"></div> */}
+        <PuffLoader
+  color="rgba(49, 23, 215, 1)"
+  cssOverride={{}}
+  loading
+  speedMultiplier={1}
+/>
       </div>
+    </div>
     );
   if (isError)
     return (

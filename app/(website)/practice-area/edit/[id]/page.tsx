@@ -7,14 +7,23 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
+import { useSession } from "next-auth/react"
+
+declare module "next-auth" {
+  interface Session {
+    accessToken?: string;
+  }
+}
 
 export default function EditCategoryPage() {
   const router = useRouter()
   const params = useParams()
   const categoryId = params.id as string
 
-  const TOKEN =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2ODE0NGFiODkzNjg4NGU0OTY0MzhiNjQiLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE3NDk2MjM3NzQsImV4cCI6MTc1MDIyODU3NH0.sSDAQEhRI6ii7oG05O2mYYaxZoXxFfj0tk52ErnpmSs"
+  const session = useSession();
+  console.log("session", session);
+
+  const TOKEN = session?.data?.accessToken;
 
   const [formData, setFormData] = useState({
     name: "",

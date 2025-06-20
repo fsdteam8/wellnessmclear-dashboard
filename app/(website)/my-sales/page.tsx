@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { Button } from "@/components/ui/button"
@@ -9,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { DataTable } from "@/components/data-table"
 import { Download, Loader2 } from "lucide-react"
+import { useSession } from "next-auth/react"
 
 interface SalesData {
   quantity: number
@@ -28,45 +28,46 @@ const columns = [
   { key: "amount", label: "Amount" },
 ]
 
-// Fetch function for all sales
-const fetchSalesData = async (): Promise<ApiResponse> => {
-  const TOKEN =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2ODNlZDVlYTY0ODUxNzk2MWZlYmQ2OGQiLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE3NDk4ODkzNzgsImV4cCI6MTc1MDQ5NDE3OH0.GkczutuRZ01PJuoWkHzoLx2PB_gBDkEGAfMyiN7-4XI"
-  const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/admin/dashboard/my-sales`,{
-   headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${TOKEN}`, // Replace with your actual token
-    },
-  })
-  if (!response.ok) {
-    throw new Error("Failed to fetch sales data")
-  }
-  return response.json()
-}
-
-// Fetch function for search by ID
-const fetchSalesDataBySearch = async (searchId: string): Promise<ApiResponse> => {
-  const TOKEN =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2ODNlZDVlYTY0ODUxNzk2MWZlYmQ2OGQiLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE3NDk4ODkzNzgsImV4cCI6MTc1MDQ5NDE3OH0.GkczutuRZ01PJuoWkHzoLx2PB_gBDkEGAfMyiN7-4XI"
-  const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/admin/dashboard/my-sales?search=${encodeURIComponent(searchId)}`,{
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${TOKEN}`, // Replace with your actual token
-    },
-  })
-  if (!response.ok) {
-    throw new Error("Failed to fetch sales data")
-  }
-  return response.json()
-}
-
 export default function MySalesPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [productIdFilter, setProductIdFilter] = useState("")
   const [searchTerm, setSearchTerm] = useState("")
   const itemsPerPage = 6
 
-  // Query for all sales data (when no search)
+  const { data: session } = useSession()
+  const TOKEN = session?.accessToken || ""
+
+  // Fetch function for all sales
+  const fetchSalesData = async (): Promise<ApiResponse> => {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/admin/dashboard/my-sales`, {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${TOKEN}`,
+      },
+    })
+    if (!response.ok) {
+      throw new Error("Failed to fetch sales data")
+    }
+    return response.json()
+  }
+
+  // Fetch function for search by ID
+  const fetchSalesDataBySearch = async (searchId: string): Promise<ApiResponse> => {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/admin/dashboard/my-sales?search=${encodeURIComponent(searchId)}`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${TOKEN}`,
+        },
+      },
+    )
+    if (!response.ok) {
+      throw new Error("Failed to fetch sales data")
+    }
+    return response.json()
+  }
+
   const {
     data: allSalesData,
     isLoading: isLoadingAll,
@@ -74,10 +75,9 @@ export default function MySalesPage() {
   } = useQuery({
     queryKey: ["sales-data"],
     queryFn: fetchSalesData,
-    enabled: !searchTerm, // Only fetch when not searching
+    enabled: !searchTerm,
   })
 
-  // Query for search results
   const {
     data: searchSalesData,
     isLoading: isLoadingSearch,
@@ -85,15 +85,13 @@ export default function MySalesPage() {
   } = useQuery({
     queryKey: ["sales-data-search", searchTerm],
     queryFn: () => fetchSalesDataBySearch(searchTerm),
-    enabled: !!searchTerm, // Only fetch when searching
+    enabled: !!searchTerm,
   })
 
-  // Determine which data to use
   const currentData = searchTerm ? searchSalesData : allSalesData
   const isLoading = searchTerm ? isLoadingSearch : isLoadingAll
   const error = searchTerm ? errorSearch : errorAll
 
-  // Format data for display
   const formattedData =
     currentData?.data?.map((item, index) => ({
       id: index + 1,
@@ -102,7 +100,6 @@ export default function MySalesPage() {
       amount: `$${item.amount.toFixed(2)}`,
     })) || []
 
-  // Calculate total sales
   const totalSales = currentData?.data?.reduce((sum, item) => sum + item.amount, 0) || 0
 
   const totalItems = formattedData.length
@@ -111,7 +108,7 @@ export default function MySalesPage() {
   const handleSearch = () => {
     if (productIdFilter.trim()) {
       setSearchTerm(productIdFilter.trim())
-      setCurrentPage(1) // Reset to first page when searching
+      setCurrentPage(1)
     }
   }
 

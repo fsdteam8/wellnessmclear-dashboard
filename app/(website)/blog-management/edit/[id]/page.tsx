@@ -17,6 +17,7 @@ import { Breadcrumb } from "@/components/breadcrumb"
 // Dynamically import ReactQuill to avoid SSR issues
 const ReactQuill = dynamic(() => import("react-quill"), { ssr: false })
 import "react-quill/dist/quill.snow.css"
+import { useSession } from "next-auth/react"
 
 interface Blog {
   _id: string
@@ -40,6 +41,11 @@ export default function EditBlogPage() {
   const queryClient = useQueryClient()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  const session = useSession();
+  console.log("session", session);
+
+  const TOKEN = session?.data?.accessToken;
+
   const blogId = params.id as string
 
   const [formData, setFormData] = useState({
@@ -50,10 +56,6 @@ export default function EditBlogPage() {
   const [thumbnail, setThumbnail] = useState<File | null>(null)
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null)
   const [existingThumbnail, setExistingThumbnail] = useState<string | null>(null)
-
-  const token =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2ODE0NGFiODkzNjg4NGU0OTY0MzhiNjQiLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE3NDkwMzY1NzQsImV4cCI6MTc0OTY0MTM3NH0.XyD7AImvYdvYPTkVMQr5WpGR1sDs4HjibnwKcBOSjQA"
-
   // Fetch existing blog data
   const {
     data: blogData,
@@ -64,7 +66,7 @@ export default function EditBlogPage() {
     queryFn: async () => {
       const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/blog/${blogId}`, {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${TOKEN}`,
         },
       })
       if (!res.ok) {
@@ -135,7 +137,7 @@ export default function EditBlogPage() {
       const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/blog/${blogId}`, {
         method: "PUT",
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${TOKEN}`,
         },
         body: data,
       })

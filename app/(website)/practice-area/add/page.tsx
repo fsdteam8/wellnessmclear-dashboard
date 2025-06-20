@@ -12,13 +12,22 @@ import { Label } from "@/components/ui/label";
 // import { useToast } from "@/hooks/use-toast";
 import { Save } from "lucide-react";
 import { toast } from "sonner";
+import { useSession } from "next-auth/react";
 
-// Static token
-const TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2ODE0NGFiODkzNjg4NGU0OTY0MzhiNjQiLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE3NDk2MjM3NzQsImV4cCI6MTc1MDIyODU3NH0.sSDAQEhRI6ii7oG05O2mYYaxZoXxFfj0tk52ErnpmSs";
+declare module "next-auth" {
+  interface Session {
+    accessToken?: string;
+  }
+}
 
 export default function AddPracticeAreaPage() {
   const router = useRouter();
   // const { toast } = useToast();
+
+  const session = useSession();
+  console.log("session", session);
+
+  const TOKEN = session?.data?.accessToken;
 
   const [formData, setFormData] = useState({
     name: "",

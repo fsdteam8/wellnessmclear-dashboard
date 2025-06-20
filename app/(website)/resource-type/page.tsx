@@ -7,6 +7,7 @@ import { DataTable } from "@/components/data-table";
 import { Badge } from "@/components/ui/badge";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { useSession } from "next-auth/react";
 
 interface ResourceType {
   _id: string;
@@ -15,6 +16,11 @@ interface ResourceType {
   createdAt: string;
 }
 
+declare module "next-auth" {
+  interface Session {
+    accessToken?: string;
+  }
+}
 interface Column {
   key: keyof ResourceType;
   label: string;
@@ -55,16 +61,14 @@ export default function ResourceTypePage() {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const itemsPerPage = 10;
 
-  const TOKEN =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2ODE0NGFiODkzNjg4NGU0OTY0MzhiNjQiLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE3NDk2MjM3NzQsImV4cCI6MTc1MDIyODU3NH0.sSDAQEhRI6ii7oG05O2mYYaxZoXxFfj0tk52ErnpmSs";
+  const session = useSession();
+  console.log("session", session);
+
+  const TOKEN = session?.data?.accessToken;
 
   const queryClient = useQueryClient();
 
-  const {
-    data,
-    isLoading,
-    isError,
-  } = useQuery<ResourceType[]>({
+  const { data, isLoading, isError } = useQuery<ResourceType[]>({
     queryKey: ["resource-data"],
     queryFn: async () => {
       const res = await fetch(
@@ -136,7 +140,10 @@ export default function ResourceTypePage() {
   const handleDelete = async (resource: ResourceType) => {
     try {
       await deleteMutation.mutateAsync(resource);
-      console.log("Resource type deleted successfully:", resource.resourceTypeName);
+      console.log(
+        "Resource type deleted successfully:",
+        resource.resourceTypeName
+      );
     } catch (error) {
       console.error("Failed to delete resource type:", error);
     }
@@ -152,7 +159,9 @@ export default function ResourceTypePage() {
               title="Resource Types List"
               buttonText="Add Resource Type"
             />
-            <p className="text-gray-500 -mt-4">Dashboard &gt; Resource_Types_List</p>
+            <p className="text-gray-500 -mt-4">
+              Dashboard &gt; Resource_Types_List
+            </p>
           </div>
 
           {isLoading ? (

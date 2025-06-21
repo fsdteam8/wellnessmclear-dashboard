@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-
+import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -28,10 +28,17 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { Check, ChevronDown, FileText, ImageIcon, X } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  Check,
+  ChevronDown,
+  FileText,
+  ImageIcon,
+  X,
+  Loader2,
+} from "lucide-react";
 import dynamic from "next/dynamic";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import "react-quill/dist/quill.snow.css";
 import Image from "next/image";
 import { useSession } from "next-auth/react";
@@ -58,6 +65,26 @@ interface ResourceType {
   description: string;
 }
 
+interface ResourceData {
+  _id: string;
+  title: string;
+  country: string;
+  states: string[];
+  resourceType: string[];
+  description: string;
+  price: number;
+  discountPrice: number;
+  quantity: number;
+  format: string;
+  thumbnail: string;
+  images: string[];
+  practiceAreas: string[];
+  file: {
+    url: string;
+    type: string;
+  };
+}
+
 interface FormDataState {
   title: string;
   price: string;
@@ -67,18 +94,19 @@ interface FormDataState {
   country: string;
   states: string[];
   description: string;
-  practiceArea: string; // Stores ID
-  resourceType: string; // Stores ID
+  practiceArea: string;
+  resourceType: string;
   thumbnail: File | null;
-  file: File | null; // Changed from 'document' to 'file'
-  images: File[]; // New field for multiple images
+  file: File | null;
+  images: File[];
 }
 
-// Define the path for the component if it's not the root page
-// const componentFilePath = "resource-form.tsx"
-
-export default function ResourceForm() {
+export default function EditPage() {
+  const params = useParams();
+  // const router = useRouter()
+  const slug = params.id as string;
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
   const [selectedStates, setSelectedStates] = useState<string[]>([]);
   const [countryOpen, setCountryOpen] = useState(false);
@@ -86,6 +114,15 @@ export default function ResourceForm() {
   const [stateSearch, setStateSearch] = useState("");
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [existingImages, setExistingImages] = useState<string[]>([]);
+  const [existingThumbnail, setExistingThumbnail] = useState<string | null>(
+    null
+  );
+  const [existingFile, setExistingFile] = useState<{
+    url: string;
+    type: string;
+  } | null>(null);
+  const [isFormInitialized, setIsFormInitialized] = useState(false);
   const thumbnailInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState<FormDataState>({
@@ -100,41 +137,63 @@ export default function ResourceForm() {
     practiceArea: "",
     resourceType: "",
     thumbnail: null,
-    file: null, // Changed from 'document' to 'file'
-    images: [], // Initialize images as an empty array
+    file: null,
+    images: [],
   });
 
   const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
-
   const session = useSession();
   const API_TOKEN = session?.data?.accessToken;
 
-  // const session = useSession()
-  // const API_TOKEN = session?.data?.user?.accessToken
-  // console.log("Token:", API_TOKEN);
-  // const API_TOKEN =
-  //   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2ODFhZGYyYjVmYzQyNjAwMGM4MWQ2Y2UiLCJyb2xlIjoiU0VMTEVSIiwiaWF0IjoxNzUwMDU0Mjc1LCJleHAiOjE3NTA2NTkwNzV9.2HLQzofcpP-dZgsdKe1wrin7-XL-IrtH77tQbQcC5Hg"
+  // Memoize modules to prevent unnecessary re-renders
+  const modules = useMemo(
+    () => ({
+      toolbar: [
+        [{ header: [1, 2, 3, 4, 5, 6, false] }],
+        ["bold", "italic", "underline", "strike"],
+        [{ list: "ordered" }, { list: "bullet" }],
+        [{ align: [] }],
+        ["clean"],
+      ],
+    }),
+    []
+  );
 
-  const modules = {
-    toolbar: [
-      [{ header: [1, 2, 3, 4, 5, 6, false] }],
-      ["bold", "italic", "underline", "strike"],
-      [{ list: "ordered" }, { list: "bullet" }],
-      [{ align: [] }],
-      ["clean"],
+  const formats = useMemo(
+    () => [
+      "header",
+      "bold",
+      "italic",
+      "underline",
+      "strike",
+      "list",
+      "bullet",
+      "align",
     ],
-  };
+    []
+  );
 
-  const formats = [
-    "header",
-    "bold",
-    "italic",
-    "underline",
-    "strike",
-    "list",
-    "bullet",
-    "align",
-  ];
+  // Fetch single resource data
+  const {
+    data: resourceData,
+    isLoading: isLoadingResource,
+    error: resourceError,
+  } = useQuery<ResourceData>({
+    queryKey: ["resource", slug],
+    queryFn: async () => {
+      const response = await fetch(`${API_BASE_URL}/api/v1/resource/${slug}`, {
+        headers: {
+          Authorization: `Bearer ${API_TOKEN}`,
+          "Content-Type": "application/json",
+        },
+      });
+      if (!response.ok) throw new Error("Failed to fetch resource");
+      const data = await response.json();
+      return data.data;
+    },
+    enabled: !!API_TOKEN && !!slug,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
 
   const { data: countriesData, isLoading: isLoadingCountries } = useQuery<
     Country[]
@@ -151,6 +210,8 @@ export default function ResourceForm() {
       const data = await response.json();
       return data.success ? data.data : [];
     },
+    enabled: !!API_TOKEN,
+    staleTime: 10 * 60 * 1000, // 10 minutes
   });
 
   const { data: practiceAreasData, isLoading: isLoadingPracticeAreas } =
@@ -170,6 +231,8 @@ export default function ResourceForm() {
         const data = await response.json();
         return data.success ? data.data : [];
       },
+      enabled: !!API_TOKEN,
+      staleTime: 10 * 60 * 1000, // 10 minutes
     });
 
   const { data: resourceTypesData, isLoading: isLoadingResourceTypes } =
@@ -189,9 +252,69 @@ export default function ResourceForm() {
         const data = await response.json();
         return data.success ? data.data : [];
       },
+      enabled: !!API_TOKEN,
+      staleTime: 10 * 60 * 1000, // 10 minutes
     });
 
-  const { mutate: submitResource, isPending: isSubmitting } = useMutation({
+  // Populate form data when resource data is loaded (only once)
+  useEffect(() => {
+    if (
+      resourceData &&
+      countriesData &&
+      practiceAreasData &&
+      resourceTypesData &&
+      !isFormInitialized
+    ) {
+      // Find matching country
+      const country = countriesData.find(
+        (c) => c.countryName === resourceData.country
+      );
+      if (country) {
+        setSelectedCountry(country);
+      }
+
+      // Find matching practice area
+      const practiceArea = practiceAreasData.find((pa) =>
+        resourceData.practiceAreas.includes(pa.name)
+      );
+
+      // Find matching resource type
+      const resourceType = resourceTypesData.find((rt) =>
+        resourceData.resourceType.includes(rt.resourceTypeName)
+      );
+
+      // Set form data in one batch update
+      setFormData({
+        title: resourceData.title || "",
+        price: resourceData.price?.toString() || "",
+        discountPrice: resourceData.discountPrice?.toString() || "",
+        quantity: resourceData.quantity?.toString() || "",
+        format: resourceData.format || "",
+        country: resourceData.country || "",
+        states: resourceData.states || [],
+        description: resourceData.description || "",
+        practiceArea: practiceArea?._id || "",
+        resourceType: resourceType?._id || "",
+        thumbnail: null,
+        file: null,
+        images: [],
+      });
+
+      setSelectedStates(resourceData.states || []);
+      setExistingImages(resourceData.images || []);
+      setExistingThumbnail(resourceData.thumbnail || null);
+      setExistingFile(resourceData.file || null);
+      setIsFormInitialized(true);
+    }
+  }, [
+    resourceData,
+    countriesData,
+    practiceAreasData,
+    resourceTypesData,
+    isFormInitialized,
+  ]);
+
+  const { mutate: updateResource, isPending: isSubmitting } = useMutation({
     mutationFn: async (currentFormData: FormDataState) => {
       const submitData = new FormData();
       submitData.append("title", currentFormData.title);
@@ -228,17 +351,15 @@ export default function ResourceForm() {
         submitData.append("thumbnail", currentFormData.thumbnail);
       }
       if (currentFormData.file) {
-        // Changed from currentFormData.document
         submitData.append("file", currentFormData.file);
       }
 
-      // Append multiple images
       currentFormData.images.forEach((imageFile) => {
-        submitData.append("images", imageFile); // Backend should handle multiple files with the same key
+        submitData.append("images", imageFile);
       });
 
-      const response = await fetch(`${API_BASE_URL}/api/v1/resource`, {
-        method: "POST",
+      const response = await fetch(`${API_BASE_URL}/api/v1/resource/${slug}`, {
+        method: "PUT",
         headers: { Authorization: `Bearer ${API_TOKEN}` },
         body: submitData,
       });
@@ -246,37 +367,102 @@ export default function ResourceForm() {
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(
-          `Failed to publish resource: ${
+          `Failed to update resource: ${
             errorData.message || response.statusText
           }`
         );
       }
       return response.json();
     },
-    onSuccess: (data) => {
-      console.log("Resource published successfully:", data);
-      toast({
-        title: "Success!",
-        description: "Resource has been published successfully.",
-        variant: "default",
-      });
+    onMutate: async (currentFormData) => {
+      // Cancel any outgoing refetches for both individual resource and list
+      await queryClient.cancelQueries({ queryKey: ["resource", slug] });
+      await queryClient.cancelQueries({ queryKey: ["resources", "approved"] });
+
+      // Snapshot the previous values
+      const previousResource = queryClient.getQueryData(["resource", slug]);
+      const previousResourcesList = queryClient.getQueryData([
+        "resources",
+        "approved",
+      ]);
+
+      // Optimistically update the individual resource
+      if (resourceData) {
+        const optimisticResource = {
+          ...resourceData,
+          title: currentFormData.title,
+          price: Number(currentFormData.price),
+          discountPrice: Number(currentFormData.discountPrice),
+          quantity: Number(currentFormData.quantity),
+          format: currentFormData.format,
+          country: currentFormData.country,
+          states: currentFormData.states,
+          description: currentFormData.description,
+        };
+        queryClient.setQueryData(["resource", slug], optimisticResource);
+      }
+
+      // Return context for rollback
+      return { previousResource, previousResourcesList };
     },
-    onError: (error: Error) => {
-      console.error("Error publishing resource:", error);
+    onError: (err, variables, context) => {
+      // Rollback on error
+      if (context?.previousResource) {
+        queryClient.setQueryData(["resource", slug], context.previousResource);
+      }
+      if (context?.previousResourcesList) {
+        queryClient.setQueryData(
+          ["resources", "approved"],
+          context.previousResourcesList
+        );
+      }
+
+      console.error("Error updating resource:", err);
       toast({
         title: "Error",
         description:
-          error.message || "Failed to publish resource. Please try again.",
+          err.message || "Failed to update resource. Please try again.",
         variant: "destructive",
       });
     },
+    onSuccess: (data) => {
+      console.log("Resource updated successfully:", data);
+
+      // Invalidate all related queries to ensure fresh data
+      queryClient.invalidateQueries({ queryKey: ["resource", slug] });
+      queryClient.invalidateQueries({ queryKey: ["resources", "approved"] });
+      queryClient.invalidateQueries({ queryKey: ["resources"] }); // Invalidate any other resource queries
+
+      // Refetch the list immediately to ensure it's updated
+      queryClient.refetchQueries({ queryKey: ["resources", "approved"] });
+
+      toast({
+        title: "Success!",
+        description: "Resource has been updated successfully.",
+        variant: "default",
+      });
+
+      // Optional: Navigate back to list after successful update
+      // setTimeout(() => {
+      //   router.push('/resource-list')
+      // }, 1500)
+    },
+    onSettled: () => {
+      // Always refetch after error or success to ensure we have the latest data
+      queryClient.invalidateQueries({ queryKey: ["resource", slug] });
+      queryClient.invalidateQueries({ queryKey: ["resources", "approved"] });
+    },
   });
 
-  const handleInputChange = (field: keyof FormDataState, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
+  // Optimized input change handler
+  const handleInputChange = useCallback(
+    (field: keyof FormDataState, value: string) => {
+      setFormData((prev) => ({ ...prev, [field]: value }));
+    },
+    []
+  );
 
-  const handleCountrySelect = (country: Country) => {
+  const handleCountrySelect = useCallback((country: Country) => {
     setSelectedCountry(country);
     setSelectedStates([]);
     setFormData((prev) => ({
@@ -285,53 +471,55 @@ export default function ResourceForm() {
       states: [],
     }));
     setCountryOpen(false);
-  };
+  }, []);
 
-  const handleStateToggle = (state: string) => {
-    const newStates = selectedStates.includes(state)
-      ? selectedStates.filter((s) => s !== state)
-      : [...selectedStates, state];
-    setSelectedStates(newStates);
-    setFormData((prev) => ({ ...prev, states: newStates }));
-  };
+  const handleStateToggle = useCallback(
+    (state: string) => {
+      const newStates = selectedStates.includes(state)
+        ? selectedStates.filter((s) => s !== state)
+        : [...selectedStates, state];
+      setSelectedStates(newStates);
+      setFormData((prev) => ({ ...prev, states: newStates }));
+    },
+    [selectedStates]
+  );
 
-  const handleThumbnailUpload = (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = event.target.files?.[0] || null;
+  const handleThumbnailUpload = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0] || null;
 
-    // Revoke the old object URL if it exists
-    if (thumbnailPreview) {
-      URL.revokeObjectURL(thumbnailPreview);
-    }
+      if (thumbnailPreview) {
+        URL.revokeObjectURL(thumbnailPreview);
+      }
 
-    if (file) {
-      if (!file.type.startsWith("image/")) {
-        toast({
-          title: "Invalid file type",
-          description: "Please upload only image files for thumbnail.",
-          variant: "destructive",
-        });
+      if (file) {
+        if (!file.type.startsWith("image/")) {
+          toast({
+            title: "Invalid file type",
+            description: "Please upload only image files for thumbnail.",
+            variant: "destructive",
+          });
+          setFormData((prev) => ({ ...prev, thumbnail: null }));
+          setThumbnailPreview(null);
+          if (thumbnailInputRef.current) {
+            thumbnailInputRef.current.value = "";
+          }
+          return;
+        }
+        setFormData((prev) => ({ ...prev, thumbnail: file }));
+        setThumbnailPreview(URL.createObjectURL(file));
+      } else {
         setFormData((prev) => ({ ...prev, thumbnail: null }));
         setThumbnailPreview(null);
         if (thumbnailInputRef.current) {
           thumbnailInputRef.current.value = "";
         }
-        return;
       }
-      setFormData((prev) => ({ ...prev, thumbnail: file }));
-      setThumbnailPreview(URL.createObjectURL(file));
-    } else {
-      // No file selected or selection cancelled
-      setFormData((prev) => ({ ...prev, thumbnail: null }));
-      setThumbnailPreview(null);
-      if (thumbnailInputRef.current) {
-        thumbnailInputRef.current.value = "";
-      }
-    }
-  };
+    },
+    [thumbnailPreview, toast]
+  );
 
-  const handleRemoveThumbnail = () => {
+  const handleRemoveThumbnail = useCallback(() => {
     if (thumbnailPreview) {
       URL.revokeObjectURL(thumbnailPreview);
     }
@@ -340,113 +528,86 @@ export default function ResourceForm() {
     if (thumbnailInputRef.current) {
       thumbnailInputRef.current.value = "";
     }
-  };
+  }, [thumbnailPreview]);
 
-  // Renamed from handleDocumentUpload to handleFileUpload
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const uploadedFile = event.target.files?.[0] || null; // Renamed variable for clarity
-    setFormData((prev) => ({
-      ...prev,
-      file: uploadedFile, // Changed from 'document' to 'file'
-    }));
-  };
-
-  const handleImagesUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (files) {
-      const newFiles = Array.from(files);
-      // const newPreviews = newFiles.map((file) => URL.createObjectURL(file))
-
-      // Filter out non-image files
-      const imageFiles = newFiles.filter((file) =>
-        file.type.startsWith("image/")
-      );
-      if (imageFiles.length !== newFiles.length) {
-        toast({
-          title: "Invalid file type",
-          description: "Some files were not images and were not added.",
-          variant: "destructive",
-        });
-      }
-
+  const handleFileUpload = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const uploadedFile = event.target.files?.[0] || null;
       setFormData((prev) => ({
         ...prev,
-        images: [...prev.images, ...imageFiles],
+        file: uploadedFile,
       }));
-      setImagePreviews((prev) => [
-        ...prev,
-        ...imageFiles.map((file) => URL.createObjectURL(file)),
-      ]);
-    }
-    // Reset file input to allow selecting the same file(s) again if removed
-    if (event.target) {
-      event.target.value = "";
-    }
-  };
+    },
+    []
+  );
 
-  const handleRemoveImage = (indexToRemove: number) => {
-    URL.revokeObjectURL(imagePreviews[indexToRemove]);
-    setImagePreviews((prev) =>
+  const handleImagesUpload = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const files = event.target.files;
+      if (files) {
+        const newFiles = Array.from(files);
+        const imageFiles = newFiles.filter((file) =>
+          file.type.startsWith("image/")
+        );
+
+        if (imageFiles.length !== newFiles.length) {
+          toast({
+            title: "Invalid file type",
+            description: "Some files were not images and were not added.",
+            variant: "destructive",
+          });
+        }
+
+        setFormData((prev) => ({
+          ...prev,
+          images: [...prev.images, ...imageFiles],
+        }));
+        setImagePreviews((prev) => [
+          ...prev,
+          ...imageFiles.map((file) => URL.createObjectURL(file)),
+        ]);
+      }
+      if (event.target) {
+        event.target.value = "";
+      }
+    },
+    [toast]
+  );
+
+  const handleRemoveImage = useCallback(
+    (indexToRemove: number) => {
+      URL.revokeObjectURL(imagePreviews[indexToRemove]);
+      setImagePreviews((prev) =>
+        prev.filter((_, index) => index !== indexToRemove)
+      );
+      setFormData((prev) => ({
+        ...prev,
+        images: prev.images.filter((_, index) => index !== indexToRemove),
+      }));
+    },
+    [imagePreviews]
+  );
+
+  const handleRemoveExistingImage = useCallback((indexToRemove: number) => {
+    setExistingImages((prev) =>
       prev.filter((_, index) => index !== indexToRemove)
     );
-    setFormData((prev) => ({
-      ...prev,
-      images: prev.images.filter((_, index) => index !== indexToRemove),
-    }));
-  };
+  }, []);
 
-  const handleSubmit = () => {
-    const practiceAreaObj = practiceAreasData?.find(
-      (p) => p._id === formData.practiceArea
-    );
-    const resourceTypeObj = resourceTypesData?.find(
-      (rt) => rt._id === formData.resourceType
-    );
+  const handleSubmit = useCallback(() => {
+    updateResource(formData);
+  }, [updateResource, formData]);
 
-    const dataToLog = {
-      title: formData.title,
-      description: formData.description,
-      price: formData.price,
-      discountPrice: formData.discountPrice,
-      format: formData.format,
-      quantity: formData.quantity,
-      country: formData.country,
-      states: formData.states,
-      practiceAreas: practiceAreaObj
-        ? [practiceAreaObj.name]
-        : formData.practiceArea
-        ? [formData.practiceArea]
-        : [],
-      resourceType: resourceTypeObj
-        ? [resourceTypeObj.resourceTypeName]
-        : formData.resourceType
-        ? [formData.resourceType]
-        : [],
-      thumbnail: formData.thumbnail
-        ? `https://res.cloudinary.com/dyxwchbmh/image/upload/v_placeholder/resources/thumbnails/thumb_${formData.thumbnail.name}`
-        : null,
-      file: formData.file // Changed from 'File' and formData.document
-        ? {
-            url: `https://res.cloudinary.com/dyxwchbmh/image/upload/v_placeholder/resources/files/doc_${formData.file.name}`, // Example URL
-            type: formData.file.type,
-          }
-        : null,
-      images: formData.images.map(
-        (img) =>
-          `https://res.cloudinary.com/dyxwchbmh/image/upload/v_placeholder/resources/images/img_${img.name}`
-      ),
-    };
-    console.log("Form Data (for logging):", dataToLog);
-    submitResource(formData);
-  };
-
-  const filteredStates =
-    selectedCountry?.states.filter((state) =>
-      state.toLowerCase().includes(stateSearch.toLowerCase())
-    ) || [];
+  // Memoize filtered states to prevent unnecessary recalculations
+  const filteredStates = useMemo(
+    () =>
+      selectedCountry?.states.filter((state) =>
+        state.toLowerCase().includes(stateSearch.toLowerCase())
+      ) || [],
+    [selectedCountry?.states, stateSearch]
+  );
 
   useEffect(() => {
-    // Cleanup object URL on component unmount or when preview URL changes
     return () => {
       if (thumbnailPreview) {
         URL.revokeObjectURL(thumbnailPreview);
@@ -455,17 +616,46 @@ export default function ResourceForm() {
     };
   }, [thumbnailPreview, imagePreviews]);
 
+  if (isLoadingResource) {
+    return (
+      <div className="max-w-9xl mx-auto p-6">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="flex items-center space-x-2">
+            <Loader2 className="h-6 w-6 animate-spin" />
+            <span>Loading resource data...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (resourceError) {
+    return (
+      <div className="max-w-9xl mx-auto p-6">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <h2 className="text-xl font-semibold text-red-600 mb-2">
+              Error Loading Resource
+            </h2>
+            <p className="text-gray-600">
+              Failed to load resource data. Please try again.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className="mt-6 px-6">
         <PageHeader
           // onButtonClick={handleAddResource}
-          title="Resource List"
+          title="Resource List Edit"
           // buttonText="Add Resource"
         />
         <p className="text-gray-500 -mt-4">Dashboard &gt; Resource List</p>
       </div>
-
       <div className="max-w-9xl mx-auto p-6">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Left Section */}
@@ -473,14 +663,13 @@ export default function ResourceForm() {
             <Card>
               <CardHeader>
                 <CardTitle className="text-xl font-semibold">
-                  Add Resource
+                  Edit Resource
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* ... other form fields remain the same ... */}
                 <div className="space-y-2">
                   <Label htmlFor="title" className="text-base">
-                    Add Title
+                    Title
                   </Label>
                   <Input
                     id="title"
@@ -490,6 +679,7 @@ export default function ResourceForm() {
                     onChange={(e) => handleInputChange("title", e.target.value)}
                   />
                 </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="price" className="text-base font-semibold">
@@ -554,13 +744,12 @@ export default function ResourceForm() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="PDF">PDF</SelectItem>
-                        {/* <SelectItem value="Audio">Audio</SelectItem>
-                    <SelectItem value="Video">Video</SelectItem> */}
                         <SelectItem value="Document">Doc</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Country</Label>
@@ -659,6 +848,7 @@ export default function ResourceForm() {
                     </Popover>
                   </div>
                 </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="description">Description</Label>
                   <div className="rounded-md border border-gray-300 h-[300px] overflow-hidden">
@@ -755,6 +945,25 @@ export default function ResourceForm() {
                   <Label htmlFor="thumbnail-upload">
                     Thumbnail (Images Only)
                   </Label>
+
+                  {/* Show existing thumbnail */}
+                  {existingThumbnail && !thumbnailPreview && (
+                    <div className="mb-4">
+                      <p className="text-sm text-gray-600 mb-2">
+                        Current thumbnail:
+                      </p>
+                      <div className="relative">
+                        <Image
+                          width={200}
+                          height={150}
+                          src={existingThumbnail || "/placeholder.svg"}
+                          alt="Current thumbnail"
+                          className="max-h-40 w-auto rounded-md object-contain"
+                        />
+                      </div>
+                    </div>
+                  )}
+
                   <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
                     <input
                       type="file"
@@ -770,7 +979,7 @@ export default function ResourceForm() {
                           width={100}
                           height={100}
                           src={thumbnailPreview || "/placeholder.svg"}
-                          alt="Thumbnail preview"
+                          alt="New thumbnail preview"
                           className="max-h-40 w-auto mx-auto rounded-md object-contain"
                         />
                         <p
@@ -785,7 +994,7 @@ export default function ResourceForm() {
                           onClick={handleRemoveThumbnail}
                           className="w-full text-red-600 border-red-600 hover:bg-red-50 hover:text-red-700"
                         >
-                          <X className="mr-2 h-4 w-4" /> Remove Image
+                          <X className="mr-2 h-4 w-4" /> Remove New Image
                         </Button>
                       </div>
                     ) : (
@@ -795,7 +1004,9 @@ export default function ResourceForm() {
                       >
                         <ImageIcon className="h-12 w-12 text-gray-400" />
                         <p className="text-sm text-gray-600">
-                          Click or drag to upload
+                          {existingThumbnail
+                            ? "Click to replace thumbnail"
+                            : "Click or drag to upload"}
                         </p>
                         <p className="text-xs text-gray-500">
                           PNG, JPG, GIF up to 5MB
@@ -807,28 +1018,45 @@ export default function ResourceForm() {
               </CardContent>
             </Card>
 
-            {/* File Upload (formerly Document Upload) */}
+            {/* File Upload */}
             <Card>
               <CardContent className="pt-6">
                 <div className="space-y-2">
-                  <Label>File (PDF, Word, etc.)</Label> {/* Changed label */}
+                  <Label>File (PDF, Word, etc.)</Label>
+
+                  {/* Show existing file */}
+                  {existingFile && !formData.file && (
+                    <div className="mb-4 p-3 bg-gray-50 rounded-md">
+                      <p className="text-sm text-gray-600 mb-1">
+                        Current file:
+                      </p>
+                      <a
+                        href={existingFile.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-800 text-sm underline"
+                      >
+                        View current file ({existingFile.type})
+                      </a>
+                    </div>
+                  )}
+
                   <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
                     <input
-                      type="file" // type="file" is generic for all file inputs
+                      type="file"
                       accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
-                      onChange={handleFileUpload} // Changed to handleFileUpload
+                      onChange={handleFileUpload}
                       className="hidden"
-                      id="file-upload" // Changed id
+                      id="file-upload"
                     />
                     <label htmlFor="file-upload" className="cursor-pointer">
-                      {" "}
-                      {/* Changed htmlFor */}
                       <FileText className="mx-auto h-12 w-12 text-gray-400" />
                       <p className="mt-2 text-sm text-gray-600">
                         {formData.file
                           ? formData.file.name
-                          : "Click to upload file"}{" "}
-                        {/* Changed to formData.file */}
+                          : existingFile
+                          ? "Click to replace file"
+                          : "Click to upload file"}
                       </p>
                     </label>
                   </div>
@@ -839,13 +1067,42 @@ export default function ResourceForm() {
             {/* Multiple Images Upload */}
             <Card>
               <CardHeader>
-                <CardTitle>Upload Images</CardTitle>
+                <CardTitle>Images</CardTitle>
               </CardHeader>
               <CardContent className="pt-6">
                 <div className="space-y-2">
-                  <Label htmlFor="images-upload">
-                    Additional Images (Multiple)
-                  </Label>
+                  <Label htmlFor="images-upload">Additional Images</Label>
+
+                  {/* Show existing images */}
+                  {existingImages.length > 0 && (
+                    <div className="mb-4">
+                      <p className="text-sm text-gray-600 mb-2">
+                        Current images:
+                      </p>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                        {existingImages.map((imageUrl, index) => (
+                          <div key={index} className="relative group">
+                            <Image
+                              src={imageUrl || "/placeholder.svg"}
+                              alt={`Existing image ${index + 1}`}
+                              width={100}
+                              height={100}
+                              className="w-full h-24 object-cover rounded-md"
+                            />
+                            <Button
+                              variant="destructive"
+                              size="icon"
+                              className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() => handleRemoveExistingImage(index)}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
                     <input
                       type="file"
@@ -861,40 +1118,47 @@ export default function ResourceForm() {
                     >
                       <ImageIcon className="h-12 w-12 text-gray-400" />
                       <p className="text-sm text-gray-600">
-                        Click or drag to upload images
+                        Click or drag to upload new images
                       </p>
                       <p className="text-xs text-gray-500">
                         PNG, JPG, GIF up to 5MB each
                       </p>
                     </label>
                   </div>
+
+                  {/* Show new images to be uploaded */}
                   {imagePreviews.length > 0 && (
-                    <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                      {imagePreviews.map((previewUrl, index) => (
-                        <div key={index} className="relative group">
-                          <Image
-                            src={previewUrl || "/placeholder.svg"}
-                            alt={`Preview ${index + 1}`}
-                            width={100}
-                            height={100}
-                            className="w-full h-24 object-cover rounded-md"
-                          />
-                          <Button
-                            variant="destructive"
-                            size="icon"
-                            className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={() => handleRemoveImage(index)}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                          <p
-                            className="text-xs text-gray-500 truncate mt-1"
-                            title={formData.images[index]?.name}
-                          >
-                            {formData.images[index]?.name}
-                          </p>
-                        </div>
-                      ))}
+                    <div className="mt-4">
+                      <p className="text-sm text-gray-600 mb-2">
+                        New images to upload:
+                      </p>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                        {imagePreviews.map((previewUrl, index) => (
+                          <div key={index} className="relative group">
+                            <Image
+                              src={previewUrl || "/placeholder.svg"}
+                              alt={`New preview ${index + 1}`}
+                              width={100}
+                              height={100}
+                              className="w-full h-24 object-cover rounded-md"
+                            />
+                            <Button
+                              variant="destructive"
+                              size="icon"
+                              className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() => handleRemoveImage(index)}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                            <p
+                              className="text-xs text-gray-500 truncate mt-1"
+                              title={formData.images[index]?.name}
+                            >
+                              {formData.images[index]?.name}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -907,7 +1171,14 @@ export default function ResourceForm() {
               className="w-full"
               disabled={isSubmitting}
             >
-              {isSubmitting ? "Publishing..." : "Publish Resources"}
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Updating...
+                </>
+              ) : (
+                "Update Resource"
+              )}
             </Button>
           </div>
         </div>

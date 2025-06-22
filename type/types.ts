@@ -47,6 +47,7 @@ export interface User {
   id: number;
   userId: string;
   name: string;
+  firstName: string;
   avatar: string;
   totalOrder: number;
   deliveredOrder: number;

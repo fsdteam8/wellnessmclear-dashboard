@@ -9,6 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { DataTable } from "@/components/data-table";
+import { PuffLoader } from "react-spinners";
 
 
 interface Seller {
@@ -81,7 +82,16 @@ export default function SellerProfilePage() {
     enabled: !!selectedSellerId,
   });
 
-  if (isLoading) return <div>Loading sellers...</div>;
+  if (isLoading) return <div className="flex items-center justify-center min-h-screen">
+  <div className="text-center">
+    <PuffLoader
+      color="rgba(49, 23, 215, 1)"
+      loading
+      speedMultiplier={1}
+      size={60}
+    />
+  </div>
+</div>
   if (error) return <div>Error loading sellers.</div>;
 
   const sellers: Seller[] = data?.data || [];

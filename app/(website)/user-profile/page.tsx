@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DataTable } from "@/components/data-table";
 import { Card, CardContent } from "@/components/ui/card";
 import { useSession } from "next-auth/react";
+import { PuffLoader } from "react-spinners";
 
 interface ApiUser {
   id: string;
@@ -42,7 +43,10 @@ interface DisplayUser {
 }
 
 // ✅ Use token from session dynamically
-const fetchUsers = async (page: number = 1, token?: string): Promise<ApiResponse> => {
+const fetchUsers = async (
+  page: number = 1,
+  token?: string
+): Promise<ApiResponse> => {
   const response = await fetch(
     `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/user/all-profiles?page=${page}`,
     {
@@ -83,7 +87,11 @@ const columns = [
         <Avatar className="h-8 w-8">
           <AvatarImage src={row.avatar} alt={row.name} />
           <AvatarFallback>
-            {row.name.split(" ").map((n) => n[0]).join("").toUpperCase()}
+            {row.name
+              .split(" ")
+              .map((n) => n[0])
+              .join("")
+              .toUpperCase()}
           </AvatarFallback>
         </Avatar>
         <span className="font-medium">{row.name}</span>
@@ -123,7 +131,7 @@ export default function UserProfilePage() {
   } = useQuery({
     queryKey: ["users", currentPage],
     queryFn: () => fetchUsers(currentPage, token),
-    enabled: !!token, // ✅ only run when token is available
+    enabled: !!token, 
     staleTime: 5 * 60 * 1000,
   });
 
@@ -133,7 +141,10 @@ export default function UserProfilePage() {
   const totalItems = apiResponse?.pagination?.totalItems || displayUsers.length;
   const itemsPerPage = apiResponse?.pagination?.itemsPerPage || 10;
 
-  const totalSales = displayUsers.reduce((sum, user) => sum + user.totalOrder * 65.5, 0);
+  const totalSales = displayUsers.reduce(
+    (sum, user) => sum + user.totalOrder * 65.5,
+    0
+  );
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -141,10 +152,14 @@ export default function UserProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
-          <p className="mt-4 text-gray-600">Loading users...</p>
+          <PuffLoader
+            color="rgba(49, 23, 215, 1)"
+            loading
+            speedMultiplier={1}
+            size={60}
+          />
         </div>
       </div>
     );
@@ -155,7 +170,8 @@ export default function UserProfilePage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-600 mb-4">
-            Error loading users: {error instanceof Error ? error.message : "Unknown error"}
+            Error loading users:{" "}
+            {error instanceof Error ? error.message : "Unknown error"}
           </p>
           <Button
             onClick={() => window.location.reload()}
@@ -175,7 +191,9 @@ export default function UserProfilePage() {
           <div className="flex items-center justify-between mb-6">
             <div>
               <div className="mt-4">
-                <h1 className="text-2xl font-semibold text-gray-900">User Profile</h1>
+                <h1 className="text-2xl font-semibold text-gray-900">
+                  User Profile
+                </h1>
                 <p className="text-gray-500">Dashboard User Profile</p>
               </div>
             </div>

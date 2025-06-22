@@ -1,58 +1,62 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useState } from "react"
-import { useQuery } from "@tanstack/react-query"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent } from "@/components/ui/card"
-import { DataTable } from "@/components/data-table"
-import { Download, Loader2 } from "lucide-react"
-import { useSession } from "next-auth/react"
+import type React from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
+import { DataTable } from "@/components/data-table";
+import { Download, Loader2 } from "lucide-react";
+import { useSession } from "next-auth/react";
+import { PuffLoader } from "react-spinners";
 
 interface SalesData {
-  quantity: number
-  amount: number
-  productId: string
+  quantity: number;
+  amount: number;
+  productId: string;
 }
 
 interface ApiResponse {
-  status: boolean
-  message: string
-  data: SalesData[]
+  status: boolean;
+  message: string;
+  data: SalesData[];
 }
 
 const columns = [
   { key: "productId", label: "Product ID" },
   { key: "quantity", label: "Quantity" },
   { key: "amount", label: "Amount" },
-]
+];
 
 export default function MySalesPage() {
-  const [currentPage, setCurrentPage] = useState(1)
-  const [productIdFilter, setProductIdFilter] = useState("")
-  const [searchTerm, setSearchTerm] = useState("")
-  const itemsPerPage = 6
+  const [currentPage, setCurrentPage] = useState(1);
+  const [productIdFilter, setProductIdFilter] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const itemsPerPage = 6;
 
-  const { data: session } = useSession()
-  const TOKEN = session?.accessToken || ""
+  const { data: session } = useSession();
+  const TOKEN = session?.accessToken || "";
 
-  // Fetch function for all sales
   const fetchSalesData = async (): Promise<ApiResponse> => {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/admin/dashboard/my-sales`, {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${TOKEN}`,
-      },
-    })
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/admin/dashboard/my-sales`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${TOKEN}`,
+        },
+      }
+    );
     if (!response.ok) {
-      throw new Error("Failed to fetch sales data")
+      throw new Error("Failed to fetch sales data");
     }
-    return response.json()
-  }
+    return response.json();
+  };
 
-  // Fetch function for search by ID
-  const fetchSalesDataBySearch = async (searchId: string): Promise<ApiResponse> => {
+  const fetchSalesDataBySearch = async (
+    searchId: string
+  ): Promise<ApiResponse> => {
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/admin/dashboard/my-sales?search=${encodeURIComponent(searchId)}`,
       {
@@ -60,13 +64,13 @@ export default function MySalesPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${TOKEN}`,
         },
-      },
-    )
+      }
+    );
     if (!response.ok) {
-      throw new Error("Failed to fetch sales data")
+      throw new Error("Failed to fetch sales data");
     }
-    return response.json()
-  }
+    return response.json();
+  };
 
   const {
     data: allSalesData,
@@ -76,7 +80,7 @@ export default function MySalesPage() {
     queryKey: ["sales-data"],
     queryFn: fetchSalesData,
     enabled: !searchTerm,
-  })
+  });
 
   const {
     data: searchSalesData,
@@ -86,11 +90,11 @@ export default function MySalesPage() {
     queryKey: ["sales-data-search", searchTerm],
     queryFn: () => fetchSalesDataBySearch(searchTerm),
     enabled: !!searchTerm,
-  })
+  });
 
-  const currentData = searchTerm ? searchSalesData : allSalesData
-  const isLoading = searchTerm ? isLoadingSearch : isLoadingAll
-  const error = searchTerm ? errorSearch : errorAll
+  const currentData = searchTerm ? searchSalesData : allSalesData;
+  const isLoading = searchTerm ? isLoadingSearch : isLoadingAll;
+  const error = searchTerm ? errorSearch : errorAll;
 
   const formattedData =
     currentData?.data?.map((item, index) => ({
@@ -98,45 +102,48 @@ export default function MySalesPage() {
       productId: item.productId,
       quantity: item.quantity,
       amount: `$${item.amount.toFixed(2)}`,
-    })) || []
+    })) || [];
 
-  const totalSales = currentData?.data?.reduce((sum, item) => sum + item.amount, 0) || 0
+  const totalSales =
+    currentData?.data?.reduce((sum, item) => sum + item.amount, 0) || 0;
 
-  const totalItems = formattedData.length
-  const totalPages = Math.ceil(totalItems / itemsPerPage)
+  const totalItems = formattedData.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
 
   const handleSearch = () => {
     if (productIdFilter.trim()) {
-      setSearchTerm(productIdFilter.trim())
-      setCurrentPage(1)
+      setSearchTerm(productIdFilter.trim());
+      setCurrentPage(1);
     }
-  }
+  };
 
   const handleReset = () => {
-    setProductIdFilter("")
-    setSearchTerm("")
-    setCurrentPage(1)
-  }
+    setProductIdFilter("");
+    setSearchTerm("");
+    setCurrentPage(1);
+  };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
-      handleSearch()
+      handleSearch();
     }
-  }
+  };
 
   if (error) {
     return (
       <div className="flex h-screen bg-[#EDEEF1] items-center justify-center">
         <Card className="p-6">
           <CardContent>
-            <p className="text-red-600">Error loading sales data: {error.message}</p>
+            <p className="text-red-600">
+              Error loading sales data: {error.message}
+            </p>
             <Button onClick={() => window.location.reload()} className="mt-4">
               Retry
             </Button>
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
   return (
@@ -146,7 +153,9 @@ export default function MySalesPage() {
           <div className="flex items-center justify-between mb-6">
             <div>
               <div className="mt-4">
-                <h1 className="text-2xl font-semibold text-gray-900">My Sales</h1>
+                <h1 className="text-2xl font-semibold text-gray-900">
+                  My Sales
+                </h1>
                 <p className="text-gray-500">Dashboard &gt; wallet</p>
               </div>
             </div>
@@ -161,15 +170,19 @@ export default function MySalesPage() {
             <CardContent className="p-8">
               <div className="space-y-3">
                 <p className="text-base opacity-90 ml-2">Total Sales</p>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2 min-h-[32px]">
                   <div className="w-[10px] h-[10px] bg-[#09B850] rounded-full"></div>
                   {isLoading ? (
-                    <div className="flex items-center space-x-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <p className="text-[16px] font-bold">Loading...</p>
-                    </div>
+                    <PuffLoader
+                      color="#ffffff"
+                      loading
+                      speedMultiplier={1}
+                      size={32}
+                    />
                   ) : (
-                    <p className="text-[16px] font-bold">${totalSales.toFixed(2)}</p>
+                    <p className="text-[16px] font-bold">
+                      ${totalSales.toFixed(2)}
+                    </p>
                   )}
                 </div>
               </div>
@@ -188,20 +201,34 @@ export default function MySalesPage() {
                 onKeyPress={handleKeyPress}
                 className="max-w-xs border border-[#707070] rounded-md"
               />
-              <Button onClick={handleSearch} disabled={!productIdFilter.trim() || isLoading} variant="outline">
+              <Button
+                onClick={handleSearch}
+                disabled={!productIdFilter.trim() || isLoading}
+                variant="outline"
+              >
                 {isLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                 Search
               </Button>
-              <Button onClick={handleReset} variant="outline" disabled={isLoading}>
+              <Button
+                onClick={handleReset}
+                variant="outline"
+                disabled={isLoading}
+              >
                 Reset
               </Button>
             </div>
 
             {isLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin" />
-                <span className="ml-2">Loading sales data...</span>
-              </div>
+              <div className="flex items-center justify-center min-h-screen">
+  <div className="text-center">
+    <PuffLoader
+      color="rgba(49, 23, 215, 1)"
+      loading
+      speedMultiplier={1}
+      size={60}
+    />
+  </div>
+</div>
             ) : formattedData.length > 0 ? (
               <DataTable
                 columns={columns}
@@ -215,7 +242,9 @@ export default function MySalesPage() {
             ) : (
               <div className="text-center py-8">
                 <p className="text-gray-500">
-                  {searchTerm ? "No sales found for the searched product ID." : "No sales data available."}
+                  {searchTerm
+                    ? "No sales found for the searched product ID."
+                    : "No sales data available."}
                 </p>
               </div>
             )}
@@ -223,5 +252,5 @@ export default function MySalesPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

@@ -1,115 +1,121 @@
-"use client"
 
-import { useState, useEffect } from "react"
-import { useToast } from "@/hooks/use-toast"
+
+"use client";
+
+import { useState, useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 interface Category {
-  id: number
-  name: string
-  description: string
-  subcategories?: Subcategory[]
+  id: number;
+  name: string;
+  description: string;
+  subcategories?: Subcategory[];
 }
 
 interface Subcategory {
-  id: number
-  name: string
-  description: string
-  categoryId: number
+  id: number;
+  name: string;
+  description: string;
+  categoryId: number;
 }
 
 export function useCategories() {
-  const [categories, setCategories] = useState<Category[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const { toast } = useToast()
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
 
   const fetchCategories = async () => {
-    setIsLoading(true)
+    setIsLoading(true);
     try {
       // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 500))
+      await new Promise((resolve) => setTimeout(resolve, 500));
       // Mock data
       const mockData: Category[] = [
         { id: 1, name: "Entertainment", description: "Entertainment category" },
         { id: 2, name: "Health", description: "Health category" },
         { id: 3, name: "Sports", description: "Sports category" },
-      ]
-      setCategories(mockData)
-    } catch (error) {
+      ];
+      /* eslint-disable @typescript-eslint/no-unused-vars */
+      setCategories(mockData);
+    } catch (err) {
       toast({
         title: "Error",
         description: "Failed to fetch categories",
         variant: "destructive",
-      })
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const createCategory = async (data: Omit<Category, "id">) => {
     try {
       // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       const newCategory: Category = {
         id: Date.now(),
         ...data,
-      }
-      setCategories((prev) => [...prev, newCategory])
+      };
+      setCategories((prev) => [...prev, newCategory]);
       toast({
         title: "Success",
         description: "Category created successfully",
-      })
-      return newCategory
+      });
+      return newCategory;
     } catch (error) {
       toast({
         title: "Error",
         description: "Failed to create category",
         variant: "destructive",
-      })
-      throw error
+      });
+      throw error;
     }
-  }
+  };
 
   const updateCategory = async (id: number, data: Partial<Category>) => {
     try {
       // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-      setCategories((prev) => prev.map((cat) => (cat.id === id ? { ...cat, ...data } : cat)))
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      setCategories((prev) =>
+        prev.map((cat) => (cat.id === id ? { ...cat, ...data } : cat))
+      );
       toast({
         title: "Success",
         description: "Category updated successfully",
-      })
+      });
     } catch (error) {
       toast({
         title: "Error",
         description: "Failed to update category",
         variant: "destructive",
-      })
-      throw error
+      });
+      throw error;
     }
-  }
+  };
 
   const deleteCategory = async (id: number) => {
     try {
       // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-      setCategories((prev) => prev.filter((cat) => cat.id !== id))
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      setCategories((prev) => prev.filter((cat) => cat.id !== id));
       toast({
         title: "Success",
         description: "Category deleted successfully",
-      })
+      });
     } catch (error) {
       toast({
         title: "Error",
         description: "Failed to delete category",
         variant: "destructive",
-      })
-      throw error
+      });
+      throw error;
     }
-  }
+  };
+  /* eslint-disable react-hooks/exhaustive-deps */
 
   useEffect(() => {
-    fetchCategories()
-  }, [])
+    fetchCategories();
+  }, []);
 
   return {
     categories,
@@ -118,5 +124,5 @@ export function useCategories() {
     updateCategory,
     deleteCategory,
     refetch: fetchCategories,
-  }
+  };
 }

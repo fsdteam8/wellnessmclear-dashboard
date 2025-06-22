@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
+import {  PuffLoader } from "react-spinners";
 
 interface PracticeArea {
   _id: string;
@@ -182,9 +183,16 @@ export default function CategoriesPage() {
           </div>
 
           {isLoading ? (
-            <div className="flex justify-center items-center h-60">
-              <div className="text-gray-500 text-center font-medium">
-                Loading...
+            <div className="flex h-[60vh] items-center justify-center bg-gray-50">
+              <div className="text-center">
+                {/* Optional: Remove this if you only want MoonLoader */}
+                {/* <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-600 mx-auto mb-4"></div> */}
+                <PuffLoader
+                  color="rgba(49, 23, 215, 1)"
+                  cssOverride={{}}
+                  loading
+                  speedMultiplier={1}
+                />
               </div>
             </div>
           ) : isError ? (

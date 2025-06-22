@@ -8,6 +8,7 @@ import { DataTable } from "@/components/data-table";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useSession } from "next-auth/react";
+import { PuffLoader } from "react-spinners";
 
 // Types
 type PromoCode = {
@@ -64,8 +65,8 @@ type TableColumn = {
 
 // API Functions
 const fetchPromoCodes = async (
-  page: number = 1, 
-  limit: number = 10, 
+  page: number = 1,
+  limit: number = 10,
   token: string
 ): Promise<ApiResponse> => {
   const response = await fetch(
@@ -79,34 +80,46 @@ const fetchPromoCodes = async (
   );
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ message: 'Network error' }));
+    const errorData = await response
+      .json()
+      .catch(() => ({ message: "Network error" }));
     throw new Error(errorData.message || "Failed to fetch promo codes");
   }
 
   return response.json();
 };
 
-const deletePromoCode = async (id: string, token: string): Promise<DeleteResponse> => {
+const deletePromoCode = async (
+  id: string,
+  token: string
+): Promise<DeleteResponse> => {
   console.log(`Deleting promo code with ID: ${id}`);
 
-  const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/promo-codes/${id}`, {
-    method: "DELETE",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/promo-codes/${id}`,
+    {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
 
-  console.log('Delete response status:', response.status);
+  console.log("Delete response status:", response.status);
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ message: 'Failed to delete' }));
-    console.error('Delete error:', errorData);
-    throw new Error(errorData.message || `Failed to delete promo code (${response.status})`);
+    const errorData = await response
+      .json()
+      .catch(() => ({ message: "Failed to delete" }));
+    console.error("Delete error:", errorData);
+    throw new Error(
+      errorData.message || `Failed to delete promo code (${response.status})`
+    );
   }
 
   const result = await response.json();
-  console.log('Delete result:', result);
+  console.log("Delete result:", result);
   return result;
 };
 
@@ -119,8 +132,13 @@ const formatDate = (dateString: string): string => {
   });
 };
 
-const formatDiscount = (discountType: string, discountValue: number): string => {
-  return discountType === "Percentage" ? `${discountValue}%` : `$${discountValue}`;
+const formatDiscount = (
+  discountType: string,
+  discountValue: number
+): string => {
+  return discountType === "Percentage"
+    ? `${discountValue}%`
+    : `$${discountValue}`;
 };
 
 const getStatus = (active: boolean, expiryDate: string): string => {
@@ -134,25 +152,26 @@ const isEmpty = (arr: PromoCode[]) => !arr || arr.length === 0;
 
 // Table columns configuration
 const columns: TableColumn[] = [
-  { 
-    key: "code", 
+  {
+    key: "code",
     label: "Code ID",
-    render: (value: string | number) => value
+    render: (value: string | number) => value,
   },
-  { 
-    key: "discount", 
+  {
+    key: "discount",
     label: "Discount",
-    render: (value: string | number, row: PromoCode) => formatDiscount(row.discountType, row.discountValue)
+    render: (value: string | number, row: PromoCode) =>
+      formatDiscount(row.discountType, row.discountValue),
   },
-  { 
-    key: "createdAt", 
+  {
+    key: "createdAt",
     label: "Start Date",
-    render: (value: string | number) => formatDate(value as string)
+    render: (value: string | number) => formatDate(value as string),
   },
-  { 
-    key: "expiryDate", 
+  {
+    key: "expiryDate",
     label: "End Date",
-    render: (value: string | number) => formatDate(value as string)
+    render: (value: string | number) => formatDate(value as string),
   },
   {
     key: "status",
@@ -161,13 +180,13 @@ const columns: TableColumn[] = [
       const status = getStatus(row.active, row.expiryDate);
       return (
         <Badge
-          variant={status === "Active" ? "default" : "secondary"}
+          variant={status === "Active" ? "secondary" : "secondary"}
           className={
             status === "Active"
-              ? "bg-[#008000] text-white border border-green-200"
+              ? "bg-[#7ed47e] text-black border border-red-300"
               : status === "Inactive"
-              ? "bg-[#FFA300] text-white border border-yellow-200"
-              : "bg-red-500 text-white border border-red-200"
+              ? "bg-[#FFA300] text-black border border-yellow-400"
+              : "bg-red-500 text-black border border-red-300"
           }
         >
           {status}
@@ -178,7 +197,8 @@ const columns: TableColumn[] = [
   {
     key: "usageLimit",
     label: "Usage",
-    render: (value: string | number, row: PromoCode) => `${row.usedCount}/${value}`
+    render: (value: string | number, row: PromoCode) =>
+      `${row.usedCount}/${value}`,
   },
 ];
 
@@ -194,7 +214,7 @@ export default function PromoCodePage() {
 
   // Get the access token from session
   const accessToken = session?.accessToken;
-// console.log("access",accessToken)
+  // console.log("access",accessToken)
   // Fetch promo codes using TanStack Query
   const {
     data: promoCodesResponse,
@@ -220,7 +240,7 @@ export default function PromoCodePage() {
       if (!accessToken) {
         throw new Error("No access token available");
       }
-      console.log('Delete mutation called for ID:', id);
+      console.log("Delete mutation called for ID:", id);
       return deletePromoCode(id, accessToken);
     },
     onMutate: async (deletedId) => {
@@ -228,24 +248,28 @@ export default function PromoCodePage() {
       await queryClient.cancelQueries({ queryKey: ["promoCodes"] });
 
       // Snapshot the previous value for rollback
-      const previousData = queryClient.getQueryData(["promoCodes", currentPage, itemsPerPage]);
+      const previousData = queryClient.getQueryData([
+        "promoCodes",
+        currentPage,
+        itemsPerPage,
+      ]);
 
       // Optimistically remove the item from the cache
       queryClient.setQueryData(
         ["promoCodes", currentPage, itemsPerPage],
         (old: ApiResponse | undefined) => {
           if (!old) return old;
-          
+
           return {
             ...old,
             data: {
               ...old.data,
-              data: old.data.data.filter(item => item._id !== deletedId),
+              data: old.data.data.filter((item) => item._id !== deletedId),
               pagination: {
                 ...old.data.pagination,
-                totalData: old.data.pagination.totalData - 1
-              }
-            }
+                totalData: old.data.pagination.totalData - 1,
+              },
+            },
           };
         }
       );
@@ -261,8 +285,8 @@ export default function PromoCodePage() {
           context.previousData
         );
       }
-      
-      console.error('Delete failed:', error);
+
+      console.error("Delete failed:", error);
       toast({
         title: "Error",
         description: error.message || "Failed to delete promo code.",
@@ -270,7 +294,7 @@ export default function PromoCodePage() {
       });
     },
     onSuccess: (data) => {
-      console.log('Delete successful:', data);
+      console.log("Delete successful:", data);
       toast({
         title: "Success",
         description: data.message || "Promo code deleted successfully.",
@@ -291,14 +315,14 @@ export default function PromoCodePage() {
   };
 
   const handleDelete = async (code: PromoCode) => {
-    console.log('Delete handler called for code:', code);
-    
+    console.log("Delete handler called for code:", code);
+
     // No need for window.confirm here since DataTable handles the confirmation dialog
     try {
       await deleteMutation.mutateAsync(code._id);
     } catch (error) {
       // Error is already handled in the mutation's onError callback
-      console.error('Delete operation failed:', error);
+      console.error("Delete operation failed:", error);
     }
   };
 
@@ -326,12 +350,14 @@ export default function PromoCodePage() {
                 Dashboard &gt; Code &gt; Code List
               </p>
             </div>
-            <div className="flex justify-center items-center h-64">
+            <div className="flex justify-center items-center min-h-[60vh] bg-gray-50">
               <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-600 mx-auto mb-4"></div>
-                <p className="text-lg">
-                  {!session ? "Loading session..." : "Loading promo codes..."}
-                </p>
+                <PuffLoader
+                  color="rgba(49, 23, 215, 1)"
+                  loading
+                  speedMultiplier={1}
+                  size={60} // You can adjust size
+                />
               </div>
             </div>
           </div>

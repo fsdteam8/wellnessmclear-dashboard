@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
+import { PuffLoader } from "react-spinners";
 
 declare module "next-auth" {
   interface Session {
@@ -119,14 +120,18 @@ export default function EditResourceTypePage() {
 
   if (isLoadingData) {
     return (
-      <div className="flex h-screen">
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading Resource Type...</p>
-          </div>
-        </div>
-      </div>
+      <div className="flex h-[60vh] items-center justify-center bg-gray-50">
+              <div className="text-center">
+                {/* Optional: Remove this if you only want MoonLoader */}
+                {/* <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-600 mx-auto mb-4"></div> */}
+                <PuffLoader
+                  color="rgba(49, 23, 215, 1)"
+                  cssOverride={{}}
+                  loading
+                  speedMultiplier={1}
+                />
+              </div>
+            </div>
     );
   }
 

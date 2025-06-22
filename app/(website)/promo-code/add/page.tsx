@@ -25,6 +25,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useSession } from "next-auth/react";
+import { PuffLoader } from "react-spinners";
 
 // Types
 type PromoCodeFormData = {
@@ -91,7 +92,7 @@ export default function AddCodePage() {
   console.log("session", session);
 
   const accessToken = session?.accessToken;
-  console.log("acc",accessToken)
+  console.log("acc", accessToken);
 
   const [formData, setFormData] = useState<PromoCodeFormData>({
     code: "",
@@ -144,10 +145,7 @@ export default function AddCodePage() {
     if (formData.discountValue <= 0)
       return "Discount value must be greater than 0";
 
-    if (
-      formData.discountType === "Percentage" &&
-      formData.discountValue > 100
-    )
+    if (formData.discountType === "Percentage" && formData.discountValue > 100)
       return "Percentage discount cannot exceed 100%";
 
     if (!formData.expiryDate) return "Expiry date is required";
@@ -155,8 +153,7 @@ export default function AddCodePage() {
     if (formData.expiryDate <= new Date())
       return "Expiry date must be in the future";
 
-    if (formData.usageLimit <= 0)
-      return "Usage limit must be greater than 0";
+    if (formData.usageLimit <= 0) return "Usage limit must be greater than 0";
 
     return null;
   };
@@ -214,10 +211,16 @@ export default function AddCodePage() {
                 Dashboard &gt; Code &gt; Add Code
               </p>
             </div>
-            <div className="flex justify-center items-center h-64">
+            <div className="flex h-screen items-center justify-center bg-gray-50">
               <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-600 mx-auto mb-4"></div>
-                <p className="text-lg">Loading...</p>
+                {/* Optional: Remove this if you only want MoonLoader */}
+                {/* <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-600 mx-auto mb-4"></div> */}
+                <PuffLoader
+                  color="rgba(49, 23, 215, 1)"
+                  cssOverride={{}}
+                  loading
+                  speedMultiplier={1}
+                />
               </div>
             </div>
           </div>
@@ -240,7 +243,10 @@ export default function AddCodePage() {
           <form onSubmit={handleSubmit} className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
               <div>
-                <Label htmlFor="code" className="block text-base font-medium text-black mb-3">
+                <Label
+                  htmlFor="code"
+                  className="block text-base font-medium text-black mb-3"
+                >
                   Code (3-20 chars, alphanumeric) *
                 </Label>
                 <Input
@@ -260,7 +266,10 @@ export default function AddCodePage() {
               </div>
 
               <div>
-                <Label htmlFor="discount" className="block text-base font-medium text-black mb-3">
+                <Label
+                  htmlFor="discount"
+                  className="block text-base font-medium text-black mb-3"
+                >
                   Discount *
                 </Label>
                 <Input
@@ -272,14 +281,18 @@ export default function AddCodePage() {
                   disabled={createMutation.isPending}
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  Type: {formData.discountType} | Value: {formData.discountValue}
+                  Type: {formData.discountType} | Value:{" "}
+                  {formData.discountValue}
                 </p>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-6">
               <div>
-                <Label htmlFor="expiryDate" className="block text-base font-medium text-black mb-3">
+                <Label
+                  htmlFor="expiryDate"
+                  className="block text-base font-medium text-black mb-3"
+                >
                   Expiry Date *
                 </Label>
                 <Popover>
@@ -315,7 +328,10 @@ export default function AddCodePage() {
               </div>
 
               <div>
-                <Label htmlFor="usageLimit" className="block text-base font-medium text-black mb-3">
+                <Label
+                  htmlFor="usageLimit"
+                  className="block text-base font-medium text-black mb-3"
+                >
                   Usage Limit *
                 </Label>
                 <Input
@@ -336,7 +352,10 @@ export default function AddCodePage() {
               </div>
 
               <div>
-                <Label htmlFor="status" className="block text-base font-medium text-black mb-3">
+                <Label
+                  htmlFor="status"
+                  className="block text-base font-medium text-black mb-3"
+                >
                   Status
                 </Label>
                 <Select
@@ -383,7 +402,9 @@ export default function AddCodePage() {
               <div className="bg-white p-6 rounded-lg shadow-lg">
                 <div className="flex items-center space-x-4">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-700"></div>
-                  <span className="text-lg font-medium">Creating promo code...</span>
+                  <span className="text-lg font-medium">
+                    Creating promo code...
+                  </span>
                 </div>
               </div>
             </div>

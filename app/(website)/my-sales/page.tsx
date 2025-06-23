@@ -58,7 +58,9 @@ export default function MySalesPage() {
     searchId: string
   ): Promise<ApiResponse> => {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/admin/dashboard/my-sales?search=${encodeURIComponent(searchId)}`,
+      `${
+        process.env.NEXT_PUBLIC_BACKEND_URL
+      }/api/v1/admin/dashboard/my-sales?search=${encodeURIComponent(searchId)}`,
       {
         headers: {
           "Content-Type": "application/json",
@@ -220,15 +222,15 @@ export default function MySalesPage() {
 
             {isLoading ? (
               <div className="flex items-center justify-center min-h-screen">
-  <div className="text-center">
-    <PuffLoader
-      color="rgba(49, 23, 215, 1)"
-      loading
-      speedMultiplier={1}
-      size={60}
-    />
-  </div>
-</div>
+                <div className="text-center">
+                  <PuffLoader
+                    color="rgba(49, 23, 215, 1)"
+                    loading
+                    speedMultiplier={1}
+                    size={60}
+                  />
+                </div>
+              </div>
             ) : formattedData.length > 0 ? (
               <DataTable
                 columns={columns}

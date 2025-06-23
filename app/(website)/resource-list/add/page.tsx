@@ -1,7 +1,6 @@
 "use client";
 
 import type React from "react";
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -38,7 +37,14 @@ import { useSession } from "next-auth/react";
 import { PageHeader } from "@/components/page-header";
 
 // Import React Quill dynamically to avoid SSR issues
-const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
+const ReactQuill = dynamic(() => import("react-quill"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-[300px] border border-gray-300 rounded-md flex items-center justify-center">
+      Loading editor...
+    </div>
+  ),
+});
 
 interface Country {
   _id: string;
@@ -67,15 +73,12 @@ interface FormDataState {
   country: string;
   states: string[];
   description: string;
-  practiceArea: string; // Stores ID
-  resourceType: string; // Stores ID
+  practiceArea: string;
+  resourceType: string;
   thumbnail: File | null;
-  file: File | null; // Changed from 'document' to 'file'
-  images: File[]; // New field for multiple images
+  file: File | null;
+  images: File[];
 }
-
-// Define the path for the component if it's not the root page
-// const componentFilePath = "resource-form.tsx"
 
 export default function ResourceForm() {
   const { toast } = useToast();
@@ -86,6 +89,7 @@ export default function ResourceForm() {
   const [stateSearch, setStateSearch] = useState("");
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [isClient, setIsClient] = useState(false);
   const thumbnailInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState<FormDataState>({
@@ -100,20 +104,21 @@ export default function ResourceForm() {
     practiceArea: "",
     resourceType: "",
     thumbnail: null,
-    file: null, // Changed from 'document' to 'file'
-    images: [], // Initialize images as an empty array
+    file: null,
+    images: [],
   });
 
   const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+  // const { data: session } = useSession();
+  // const API_TOKEN = session?.user?.accessToken;
 
   const session = useSession();
-  const API_TOKEN = session?.data?.accessToken;
+  const API_TOKEN = session?.data?.accessToken || "";
 
-  // const session = useSession()
-  // const API_TOKEN = session?.data?.user?.accessToken
-  // console.log("Token:", API_TOKEN);
-  // const API_TOKEN =
-  //   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2ODFhZGYyYjVmYzQyNjAwMGM4MWQ2Y2UiLCJyb2xlIjoiU0VMTEVSIiwiaWF0IjoxNzUwMDU0Mjc1LCJleHAiOjE3NTA2NTkwNzV9.2HLQzofcpP-dZgsdKe1wrin7-XL-IrtH77tQbQcC5Hg"
+  // Set isClient to true after component mounts
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const modules = {
     toolbar: [
@@ -228,13 +233,11 @@ export default function ResourceForm() {
         submitData.append("thumbnail", currentFormData.thumbnail);
       }
       if (currentFormData.file) {
-        // Changed from currentFormData.document
         submitData.append("file", currentFormData.file);
       }
 
-      // Append multiple images
       currentFormData.images.forEach((imageFile) => {
-        submitData.append("images", imageFile); // Backend should handle multiple files with the same key
+        submitData.append("images", imageFile);
       });
 
       const response = await fetch(`${API_BASE_URL}/api/v1/resource`, {
@@ -300,7 +303,6 @@ export default function ResourceForm() {
   ) => {
     const file = event.target.files?.[0] || null;
 
-    // Revoke the old object URL if it exists
     if (thumbnailPreview) {
       URL.revokeObjectURL(thumbnailPreview);
     }
@@ -322,7 +324,6 @@ export default function ResourceForm() {
       setFormData((prev) => ({ ...prev, thumbnail: file }));
       setThumbnailPreview(URL.createObjectURL(file));
     } else {
-      // No file selected or selection cancelled
       setFormData((prev) => ({ ...prev, thumbnail: null }));
       setThumbnailPreview(null);
       if (thumbnailInputRef.current) {
@@ -342,12 +343,11 @@ export default function ResourceForm() {
     }
   };
 
-  // Renamed from handleDocumentUpload to handleFileUpload
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const uploadedFile = event.target.files?.[0] || null; // Renamed variable for clarity
+    const uploadedFile = event.target.files?.[0] || null;
     setFormData((prev) => ({
       ...prev,
-      file: uploadedFile, // Changed from 'document' to 'file'
+      file: uploadedFile,
     }));
   };
 
@@ -355,7 +355,22 @@ export default function ResourceForm() {
     const files = event.target.files;
     if (files) {
       const newFiles = Array.from(files);
-      // const newPreviews = newFiles.map((file) => URL.createObjectURL(file))
+      const currentImageCount = formData.images.length;
+      const maxImages = 4;
+      const remainingSlots = maxImages - currentImageCount;
+
+      // If already at limit, prevent any new uploads
+      if (remainingSlots <= 0) {
+        toast({
+          title: "Image limit reached",
+          description: "You can only upload a maximum of 4 images.",
+          variant: "destructive",
+        });
+        if (event.target) {
+          event.target.value = "";
+        }
+        return;
+      }
 
       // Filter out non-image files
       const imageFiles = newFiles.filter((file) =>
@@ -369,16 +384,26 @@ export default function ResourceForm() {
         });
       }
 
+      // Limit to remaining slots
+      const filesToAdd = imageFiles.slice(0, remainingSlots);
+
+      if (filesToAdd.length < imageFiles.length) {
+        toast({
+          title: "Image limit reached",
+          description: `Only ${filesToAdd.length} image(s) were added. Maximum of 4 images allowed.`,
+          variant: "destructive",
+        });
+      }
+
       setFormData((prev) => ({
         ...prev,
-        images: [...prev.images, ...imageFiles],
+        images: [...prev.images, ...filesToAdd],
       }));
       setImagePreviews((prev) => [
         ...prev,
-        ...imageFiles.map((file) => URL.createObjectURL(file)),
+        ...filesToAdd.map((file) => URL.createObjectURL(file)),
       ]);
     }
-    // Reset file input to allow selecting the same file(s) again if removed
     if (event.target) {
       event.target.value = "";
     }
@@ -425,9 +450,9 @@ export default function ResourceForm() {
       thumbnail: formData.thumbnail
         ? `https://res.cloudinary.com/dyxwchbmh/image/upload/v_placeholder/resources/thumbnails/thumb_${formData.thumbnail.name}`
         : null,
-      file: formData.file // Changed from 'File' and formData.document
+      file: formData.file
         ? {
-            url: `https://res.cloudinary.com/dyxwchbmh/image/upload/v_placeholder/resources/files/doc_${formData.file.name}`, // Example URL
+            url: `https://res.cloudinary.com/dyxwchbmh/image/upload/v_placeholder/resources/files/doc_${formData.file.name}`,
             type: formData.file.type,
           }
         : null,
@@ -446,7 +471,6 @@ export default function ResourceForm() {
     ) || [];
 
   useEffect(() => {
-    // Cleanup object URL on component unmount or when preview URL changes
     return () => {
       if (thumbnailPreview) {
         URL.revokeObjectURL(thumbnailPreview);
@@ -458,11 +482,7 @@ export default function ResourceForm() {
   return (
     <div>
       <div className="mt-6 px-6">
-        <PageHeader
-          // onButtonClick={handleAddResource}
-          title="Resource List"
-          // buttonText="Add Resource"
-        />
+        <PageHeader title="Resource List" />
         <p className="text-gray-500 -mt-4">Dashboard &gt; Resource List</p>
       </div>
 
@@ -477,7 +497,6 @@ export default function ResourceForm() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* ... other form fields remain the same ... */}
                 <div className="space-y-2">
                   <Label htmlFor="title" className="text-base">
                     Add Title
@@ -554,8 +573,6 @@ export default function ResourceForm() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="PDF">PDF</SelectItem>
-                        {/* <SelectItem value="Audio">Audio</SelectItem>
-                    <SelectItem value="Video">Video</SelectItem> */}
                         <SelectItem value="Document">Doc</SelectItem>
                       </SelectContent>
                     </Select>
@@ -662,7 +679,7 @@ export default function ResourceForm() {
                 <div className="space-y-2">
                   <Label htmlFor="description">Description</Label>
                   <div className="rounded-md border border-gray-300 h-[300px] overflow-hidden">
-                    {typeof window !== "undefined" && (
+                    {isClient && (
                       <ReactQuill
                         theme="snow"
                         value={formData.description}
@@ -807,28 +824,25 @@ export default function ResourceForm() {
               </CardContent>
             </Card>
 
-            {/* File Upload (formerly Document Upload) */}
+            {/* File Upload */}
             <Card>
               <CardContent className="pt-6">
                 <div className="space-y-2">
-                  <Label>File (PDF, Word, etc.)</Label> {/* Changed label */}
+                  <Label>File (PDF, Word, etc.)</Label>
                   <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
                     <input
-                      type="file" // type="file" is generic for all file inputs
+                      type="file"
                       accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
-                      onChange={handleFileUpload} // Changed to handleFileUpload
+                      onChange={handleFileUpload}
                       className="hidden"
-                      id="file-upload" // Changed id
+                      id="file-upload"
                     />
                     <label htmlFor="file-upload" className="cursor-pointer">
-                      {" "}
-                      {/* Changed htmlFor */}
                       <FileText className="mx-auto h-12 w-12 text-gray-400" />
                       <p className="mt-2 text-sm text-gray-600">
                         {formData.file
                           ? formData.file.name
-                          : "Click to upload file"}{" "}
-                        {/* Changed to formData.file */}
+                          : "Click to upload file"}
                       </p>
                     </label>
                   </div>
@@ -844,9 +858,16 @@ export default function ResourceForm() {
               <CardContent className="pt-6">
                 <div className="space-y-2">
                   <Label htmlFor="images-upload">
-                    Additional Images (Multiple)
+                    Additional Images ({formData.images.length}/4 maximum)
                   </Label>
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                  <div
+                    className={cn(
+                      "border-2 border-dashed rounded-lg p-6 text-center",
+                      formData.images.length >= 4
+                        ? "border-gray-200 bg-gray-50"
+                        : "border-gray-300"
+                    )}
+                  >
                     <input
                       type="file"
                       accept="image/*"
@@ -854,17 +875,27 @@ export default function ResourceForm() {
                       onChange={handleImagesUpload}
                       className="hidden"
                       id="images-upload"
+                      disabled={formData.images.length >= 4}
                     />
                     <label
                       htmlFor="images-upload"
-                      className="cursor-pointer flex flex-col items-center justify-center space-y-2 py-4"
+                      className={cn(
+                        "flex flex-col items-center justify-center space-y-2 py-4",
+                        formData.images.length >= 4
+                          ? "cursor-not-allowed opacity-50"
+                          : "cursor-pointer"
+                      )}
                     >
                       <ImageIcon className="h-12 w-12 text-gray-400" />
                       <p className="text-sm text-gray-600">
-                        Click or drag to upload images
+                        {formData.images.length >= 4
+                          ? "Maximum 4 images reached"
+                          : "Click or drag to upload images"}
                       </p>
                       <p className="text-xs text-gray-500">
-                        PNG, JPG, GIF up to 5MB each
+                        {formData.images.length >= 4
+                          ? "Remove an image to add more"
+                          : "PNG, JPG, GIF up to 5MB each (Max 4 images)"}
                       </p>
                     </label>
                   </div>

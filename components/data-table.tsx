@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+//ts-ignore-file
 "use client"
+
 import { useState } from "react"
 import {
   Table,
@@ -10,14 +12,15 @@ import {
   TableRow
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { ChevronLeft, ChevronRight, Edit, Trash2 } from "lucide-react"
+import { ChevronLeft, ChevronRight, Edit, MessageCircle, Trash2 } from "lucide-react"
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog"
+import { ChatModal } from "./ChatModal"
+// import ChatModal from "@/components/chat-modal" // <-- import your modal
 
 interface Column<T> {
   key: keyof T | string
   label: string
   width?: string
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   render?: (value: any, row: T) => React.ReactNode
 }
 
@@ -34,7 +37,7 @@ interface DataTableProps<T> {
   isDeleting?: boolean
 }
 
-export function DataTable<T>({
+export function DataTable<T extends { _id?: string }>({
   columns,
   data,
   currentPage,
@@ -46,13 +49,16 @@ export function DataTable<T>({
   onDelete,
   isDeleting = false,
 }: DataTableProps<T>) {
+  const [deleteItem, setDeleteItem] = useState<T | null>(null)
+  const [isChatOpen, setIsChatOpen] = useState(false)
+  const [selectedResourceId, setSelectedResourceId] = useState<T | null>(null)
+
   const startItem = (currentPage - 1) * itemsPerPage + 1
   const endItem = Math.min(currentPage * itemsPerPage, totalItems)
 
-  const [deleteItem, setDeleteItem] = useState<T | null>(null)
-
   const handleDeleteClick = (item: T) => {
     setDeleteItem(item)
+    // console.log("first item", item)
   }
 
   const handleDeleteConfirm = async () => {
@@ -74,7 +80,6 @@ export function DataTable<T>({
     }
     return 'item'
   }
-
 
   const renderPaginationButtons = () => {
     const buttons = []
@@ -118,9 +123,7 @@ export function DataTable<T>({
 
     if (endPage < totalPages) {
       if (endPage < totalPages - 1) {
-        buttons.push(
-          <span key="ellipsis" className="mx-2">...</span>
-        )
+        buttons.push(<span key="ellipsis" className="mx-2">...</span>)
       }
       buttons.push(
         <Button key={totalPages} variant="outline" size="sm" onClick={() => onPageChange(totalPages)} className="mx-1">
@@ -152,7 +155,7 @@ export function DataTable<T>({
           <TableHeader>
             <TableRow className="border border-[#707070]">
               {columns.map((column) => (
-                <TableHead key={typeof column.key === "symbol" ? column.key.toString() : String(column.key)} className="font-semibold text-gray-900 text-left px-4 py-2">
+                <TableHead key={String(column.key)} className="font-semibold text-gray-900 text-left px-4 py-2">
                   {column.label}
                 </TableHead>
               ))}
@@ -173,14 +176,13 @@ export function DataTable<T>({
                 <TableRow key={index} className="hover:bg-gray-50 border border-[#707070]">
                   {columns.map((column) => (
                     <TableCell
-                      key={typeof column.key === "symbol" ? column.key.toString() : column.key}
+                      key={String(column.key)}
                       className="text-left px-4 py-5 whitespace-nowrap"
                       style={{ width: column.width || "auto" }}
                     >
                       {column.render ? column.render(row[column.key as keyof T], row) : String(row[column.key as keyof T])}
                     </TableCell>
                   ))}
-
                   {(onEdit || onDelete) && (
                     <TableCell className="text-center px-4 py-2">
                       <div className="flex justify-center items-center space-x-2">
@@ -211,6 +213,20 @@ export function DataTable<T>({
                             )}
                           </Button>
                         )}
+                        {/* SMS / Chat Button */}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            setIsChatOpen(true)
+                            setSelectedResourceId(row.originalId)
+                            console.log("Selected Resource ID:", row.originalId)
+                          }}
+                          className="text-[#424242] hover:text-green-600"
+                          title="Message"
+                        >
+                          <MessageCircle className="w-4 h-4" />
+                        </Button>
                       </div>
                     </TableCell>
                   )}
@@ -238,6 +254,13 @@ export function DataTable<T>({
         title="Delete Item"
         description={`Are you sure you want to delete ${deleteItem ? getItemName(deleteItem) : 'this item'}? This action cannot be undone.`}
         isLoading={isDeleting}
+      />
+
+      {/* Chat Modal */}
+      <ChatModal
+        isOpen={isChatOpen}
+        onClose={() => setIsChatOpen(false)}
+        resourceId={selectedResourceId ?? undefined}
       />
     </div>
   )

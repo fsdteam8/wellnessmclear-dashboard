@@ -8,7 +8,6 @@ import {
   Tag,
   Ticket,
   List,
-  MessageSquare,
   TrendingUp,
   DollarSign,
   FileText,
@@ -28,7 +27,7 @@ const navigation = [
   { name: "Promo Code", href: "/promo-code", icon: Ticket },
   { name: "Resource List", href: "/resource-list", icon: List },
   { name: "Request Resource", href: "/request-resource", icon: FileText },
-  { name: "Message", href: "/message", icon: MessageSquare },
+  // { name: "Message", href: "/message", icon: MessageSquare },
   { name: "My Sales", href: "/my-sales", icon: TrendingUp },
   {
     name: "Revenue from Seller",

@@ -387,7 +387,7 @@ export default function RequestResourcePage() {
             </h1>
             <p className="text-gray-500">Dashboard &gt; Request Resource</p>
           </div>
-          <DataTable
+          <DataTable<ResourceRequest>
             columns={columns}
             data={requests}
             currentPage={currentPage}

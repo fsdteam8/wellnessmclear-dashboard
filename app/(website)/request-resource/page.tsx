@@ -12,13 +12,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { MessageSquare } from "lucide-react";
+import { MessageCircle } from "lucide-react";
 import Image from "next/image";
 import type { ResourceRequest, ResourceColumn, Seller } from "@/type/types";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
 import { PuffLoader } from "react-spinners";
 import noImage from "@/public/images/NoImage.png";
+import { ChatModal } from "@/components/ChatModal";
 
 // Custom Image component with fallback
 const ImageWithFallback = ({ 
@@ -181,6 +182,8 @@ export default function RequestResourcePage() {
   const queryClient = useQueryClient();
   const session = useSession();
   const token = session?.data?.accessToken || "";
+ const [isChatOpen, setIsChatOpen] = useState(false);
+  const [selectedResourceId, setSelectedResourceId] = useState<string | null>(null);
 
   const {
     data: requests = [],
@@ -195,7 +198,7 @@ export default function RequestResourcePage() {
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
-
+console.log("Requests:", requests);
   const statusMutation = useMutation({
     mutationFn: ({
       resourceId,
@@ -216,7 +219,7 @@ export default function RequestResourcePage() {
       queryClient.setQueryData<ResourceRequest[]>(
         ["resources", "pending"],
         (old) =>
-          old?.filter((request) => String(request._id) !== resourceId) || []
+          old?.filter((request) => String(request?._id) !== resourceId) || []
       );
       return { previousRequests };
     },
@@ -248,11 +251,11 @@ export default function RequestResourcePage() {
     statusMutation.mutate({ resourceId, status: newStatus });
   };
 
-  const handleMessage = (request: ResourceRequest) => {
-    toast("Message", {
-      description: `Opening message for ${request.name}`,
-    });
-  };
+  // const handleMessage = (request: ResourceRequest) => {
+  //   toast("Message", {
+  //     description: `Opening message for ${request.name}`,
+  //   });
+  // };
 
   if (error) {
     return (
@@ -310,7 +313,7 @@ export default function RequestResourcePage() {
         );
       },
     },
-    { key: "id", label: "ID" },
+    { key: "_id", label: "ID" },
     { key: "price", label: "Price" },
     { key: "discountPrice", label: "Discount Price" },
     { key: "quantity", label: "Quantity" },
@@ -355,9 +358,26 @@ export default function RequestResourcePage() {
       key: "message",
       label: "Message",
       render: (value: unknown, row: ResourceRequest) => (
-        <Button variant="outline" size="sm" onClick={() => handleMessage(row)}>
-          <MessageSquare className="h-4 w-4" />
-        </Button>
+        <>
+           
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              setIsChatOpen(true);
+                              setSelectedResourceId(row._id);
+                              console.log(
+                                "Selected Resource ID:",
+                                row._id
+                              );
+                            }}
+                            className="text-[#424242] hover:text-green-600"
+                            title="Message"
+                          >
+                            <MessageCircle className="w-4 h-4" />
+                          </Button>
+                       
+        </>
       ),
     },
   ];
@@ -398,6 +418,12 @@ export default function RequestResourcePage() {
           />
         </div>
       </div>
+            {/* Chat Modal */}
+            <ChatModal
+              isOpen={isChatOpen}
+              onClose={() => setIsChatOpen(false)}
+              resourceId={selectedResourceId ? String(selectedResourceId) : ""}
+            />
     </div>
   );
 }

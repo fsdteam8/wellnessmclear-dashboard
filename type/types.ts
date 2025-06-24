@@ -68,8 +68,7 @@ export type ResourceStatus = "Approved" | "Pending" | "Reject";
 
 // Resource Request type
 export interface ResourceRequest {
-  id: number;
-  _id: number;
+  id: string;
   name: string;
   seller: Seller;
   price: string;
@@ -78,7 +77,8 @@ export interface ResourceRequest {
   format: string;
   date: string;
   thumbnail: string;
-  statuses: ResourceStatus[];
+  statuses: string[];
+  _id: string;
 }
 
 // Column type for the Resource Request table

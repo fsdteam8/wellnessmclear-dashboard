@@ -19,6 +19,7 @@ import { ChatModal } from "./ChatModal"
 
 interface Column<T> {
   key: keyof T | string
+  originalId?: keyof T | string
   label: string
   width?: string
   render?: (value: any, row: T) => React.ReactNode
@@ -37,7 +38,9 @@ interface DataTableProps<T> {
   isDeleting?: boolean
 }
 
-export function DataTable<T extends { _id?: string }>({
+export function DataTable<T extends {
+  [x: string]: any; _id?: string 
+}>({
   columns,
   data,
   currentPage,
@@ -260,7 +263,7 @@ export function DataTable<T extends { _id?: string }>({
       <ChatModal
         isOpen={isChatOpen}
         onClose={() => setIsChatOpen(false)}
-        resourceId={selectedResourceId ?? undefined}
+        resourceId={selectedResourceId ? String(selectedResourceId) : ""}
       />
     </div>
   )

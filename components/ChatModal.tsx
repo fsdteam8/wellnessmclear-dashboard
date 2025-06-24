@@ -57,7 +57,7 @@ export function ChatModal({ isOpen, onClose, resourceId }: ChatModalProps) {
 //   const token = (session?.data?.user as { accessToken: string })?.accessToken
     const token = session?.data?.accessToken || "";
 
-console.log("ChatModal - Token:", token)
+// console.log("ChatModal - Token:", token)
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }

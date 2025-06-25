@@ -159,12 +159,12 @@ export default function SignInForm() {
           </button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-gray-600">
+        {/* <p className="mt-6 text-center text-sm text-gray-600">
           Don&apos;t have an account?{" "}
           <Link href="/sign-up" className="text-[#23547B] hover:underline">
             Register
           </Link>
-        </p>
+        </p> */}
       </div>
           
     </div>

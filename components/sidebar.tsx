@@ -15,6 +15,7 @@ import {
   Settings,
   LogOut,
   Mails,
+  Reply,
   // Bell,
 } from "lucide-react";
 import Image from "next/image";
@@ -39,6 +40,7 @@ const navigation = [
   { name: "User Profile", href: "/user-profile", icon: User },
   {name: "NewsLetter", href:"/news-letter", icon: Mails  },
   { name: "Setting", href: "/setting", icon: Settings },
+  { name: "Reply To Question", href: "/reply-to-question", icon: Reply },
 ];
 
 export function Sidebar() {
@@ -57,7 +59,7 @@ export function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 space-y-4 px-3 lg:py-10 overflow-hidden">
+      <nav className="flex-1 space-y-3 px-3 lg:py-10 overflow-hidden">
         {navigation.map((item) => {
           const isActive =
             pathname === item.href ||

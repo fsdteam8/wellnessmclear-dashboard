@@ -1017,7 +1017,6 @@ export default function EditPage() {
                 </div>
               </CardContent>
             </Card>
-
             {/* File Upload */}
             <Card>
               <CardContent className="pt-6">

@@ -1,3 +1,4 @@
+
 "use client"
 
 import type React from "react"
@@ -61,7 +62,7 @@ export function ChatModal({ isOpen, onClose, resourceId }: ChatModalProps) {
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }
-
+/* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     scrollToBottom()
   }, [messages])

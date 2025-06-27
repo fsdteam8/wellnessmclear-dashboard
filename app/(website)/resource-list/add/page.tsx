@@ -263,6 +263,31 @@ export default function ResourceForm() {
         description: "Resource has been published successfully.",
         variant: "default",
       });
+
+      setTimeout(() => {
+        // Reset form data after successful submission
+        setFormData({
+          title: "",
+          price: "",
+          discountPrice: "",
+          quantity: "",
+          format: "",
+          country: "",
+          states: [],
+          description: "",
+          practiceArea: "",
+          resourceType: "",
+          thumbnail: null,
+          file: null,
+          images: [],
+        });
+        setSelectedCountry(null);
+        setSelectedStates([]);
+        setThumbnailPreview(null);
+        setImagePreviews([]);
+      }, 1000);
+
+      window.location.reload();
     },
     onError: (error: Error) => {
       console.error("Error publishing resource:", error);

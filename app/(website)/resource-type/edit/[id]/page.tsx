@@ -12,7 +12,7 @@ import { PuffLoader } from "react-spinners";
 
 declare module "next-auth" {
   interface Session {
-    accessToken?: string;
+    accessToken: string;
   }
 }
 

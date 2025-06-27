@@ -39,7 +39,7 @@ type PromoCodeFormData = {
 
 declare module "next-auth" {
   interface Session {
-    accessToken?: string;
+    accessToken: string;
   }
 }
 

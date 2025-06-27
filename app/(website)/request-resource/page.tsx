@@ -22,13 +22,13 @@ import noImage from "@/public/images/NoImage.png";
 import { ChatModal } from "@/components/ChatModal";
 
 // Custom Image component with fallback
-const ImageWithFallback = ({ 
-  src, 
-  alt, 
-  width, 
-  height, 
-  className 
-}: { 
+const ImageWithFallback = ({
+  src,
+  alt,
+  width,
+  height,
+  className,
+}: {
   src: string | null | undefined;
   alt: string;
   width: number;
@@ -42,7 +42,7 @@ const ImageWithFallback = ({
     }
     return noImage.src || "/images/NoImage.png";
   });
-  
+
   const [hasError, setHasError] = useState(false);
 
   const handleError = () => {
@@ -182,8 +182,10 @@ export default function RequestResourcePage() {
   const queryClient = useQueryClient();
   const session = useSession();
   const token = session?.data?.accessToken || "";
- const [isChatOpen, setIsChatOpen] = useState(false);
-  const [selectedResourceId, setSelectedResourceId] = useState<string | null>(null);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [selectedResourceId, setSelectedResourceId] = useState<string | null>(
+    null
+  );
 
   const {
     data: requests = [],
@@ -198,7 +200,7 @@ export default function RequestResourcePage() {
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
-console.log("Requests:", requests);
+  console.log("Requests:", requests);
   const statusMutation = useMutation({
     mutationFn: ({
       resourceId,
@@ -359,24 +361,19 @@ console.log("Requests:", requests);
       label: "Message",
       render: (value: unknown, row: ResourceRequest) => (
         <>
-           
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => {
-                              setIsChatOpen(true);
-                              setSelectedResourceId(row._id);
-                              console.log(
-                                "Selected Resource ID:",
-                                row._id
-                              );
-                            }}
-                            className="text-[#424242] hover:text-green-600"
-                            title="Message"
-                          >
-                            <MessageCircle className="w-4 h-4" />
-                          </Button>
-                       
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              setIsChatOpen(true);
+              setSelectedResourceId(row._id);
+              console.log("Selected Resource ID:", row._id);
+            }}
+            className="text-[#424242] hover:text-green-600"
+            title="Message"
+          >
+            <MessageCircle className="w-4 h-4" />
+          </Button>
         </>
       ),
     },
@@ -418,12 +415,12 @@ console.log("Requests:", requests);
           />
         </div>
       </div>
-            {/* Chat Modal */}
-            <ChatModal
-              isOpen={isChatOpen}
-              onClose={() => setIsChatOpen(false)}
-              resourceId={selectedResourceId ? String(selectedResourceId) : ""}
-            />
+      {/* Chat Modal */}
+      <ChatModal
+        isOpen={isChatOpen}
+        onClose={() => setIsChatOpen(false)}
+        resourceId={selectedResourceId ? String(selectedResourceId) : ""}
+      />
     </div>
   );
 }

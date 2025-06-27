@@ -19,7 +19,7 @@ interface ResourceType {
 
 declare module "next-auth" {
   interface Session {
-    accessToken?: string;
+    accessToken: string;
   }
 }
 interface Column {

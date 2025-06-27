@@ -15,11 +15,15 @@ export const metadata: Metadata = {
   description: "Ecommerce Admin Dashboard",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+
+  
+
+  
   return (
     <AuthProvider>
       <ProtectedRoute>

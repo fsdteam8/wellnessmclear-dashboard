@@ -12,12 +12,12 @@ import { useSession } from "next-auth/react"
 
 declare module "next-auth" {
   interface User {
-    id?: string
+    id: string
     accessToken?: string
   }
   interface Session {
-    user: User
-    accessToken?: string
+    // user: User
+    accessToken: string
   }
 }
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"

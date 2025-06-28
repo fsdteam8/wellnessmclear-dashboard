@@ -5,10 +5,11 @@ import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
-import { signIn } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import authImg from "@/public/images/authImg.svg";
+
 
 type FormData = {
   email: string;
@@ -41,6 +42,7 @@ export default function SignInForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const {status} = useSession()
 
   const onSubmit = async (data: FormData) => {
     setIsLoading(true);
@@ -65,6 +67,8 @@ export default function SignInForm() {
       setIsLoading(false);
     }
   };
+
+  if(status === "authenticated") router.push("/")
 
   return (
     <div className="flex flex-col md:flex-row justify-center items-center lg:gap-[100px] gap-10 min-h-screen bg-gray-100 px-4 py-8">

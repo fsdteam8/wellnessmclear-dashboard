@@ -1,8 +1,19 @@
-import React from "react";
-import "@/app/globals.css";
+import type React from "react";
+import type { Metadata } from "next";
+import "../globals.css";
 
-const AuthLayout = ({ children }: { children: React.ReactNode }) => {
-  return <div>{children}</div>;
+
+export const metadata: Metadata = {
+  title: "Lawbie - Admin Dashboard",
+  description: "Ecommerce Admin Dashboard",
 };
 
-export default AuthLayout;
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+   <>{children}</>
+  );
+}

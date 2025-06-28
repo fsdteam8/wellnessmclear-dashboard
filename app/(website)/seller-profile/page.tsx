@@ -10,6 +10,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { DataTable } from "@/components/data-table";
 import { PuffLoader } from "react-spinners";
+import { useSession } from "next-auth/react";
 
 
 interface Seller {
@@ -32,9 +33,10 @@ export default function SellerProfilePage() {
   const [selectedSellerId, setSelectedSellerId] = useState<string | null>(null);
   const [openModal, setOpenModal] = useState(false);
 
-  const TOKEN =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2ODNlZDVlYTY0ODUxNzk2MWZlYmQ2OGQiLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE3NTAxNTQzOTEsImV4cCI6MTc1MDc1OTE5MX0.0NfvtSVjexON4lfvXsiPLqTkYJj0U8T2MYe9Ie_BmAo"; 
 
+
+const session = useSession();
+  const TOKEN = session?.data?.accessToken;
   // Fetch list of sellers with pagination using object syntax for useQuery
   const {
     data,

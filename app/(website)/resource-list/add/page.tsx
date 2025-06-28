@@ -289,7 +289,7 @@ export default function ResourceForm() {
         setImagePreviews([]);
       }, 1000);
 
-      window.location.reload();
+      // window.location.reload();
     },
     onError: (error: Error) => {
       console.error("Error publishing resource:", error);

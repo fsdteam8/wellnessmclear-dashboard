@@ -22,6 +22,7 @@ declare module "next-auth" {
     accessToken: string;
   }
 }
+
 interface Column {
   key: keyof ResourceType;
   label: string;
@@ -63,8 +64,6 @@ export default function ResourceTypePage() {
   const itemsPerPage = 10;
 
   const session = useSession();
-  console.log("session", session);
-
   const TOKEN = session?.data?.accessToken;
 
   const queryClient = useQueryClient();
@@ -88,8 +87,6 @@ export default function ResourceTypePage() {
       return json.data as ResourceType[];
     },
   });
-
-  console.log("resourceType", data);
 
   const deleteMutation = useMutation({
     mutationFn: async (resource: ResourceType) => {
@@ -141,66 +138,55 @@ export default function ResourceTypePage() {
   const handleDelete = async (resource: ResourceType) => {
     try {
       await deleteMutation.mutateAsync(resource);
-      console.log(
-        "Resource type deleted successfully:",
-        resource.resourceTypeName
-      );
+      console.log("Deleted:", resource.resourceTypeName);
     } catch (error) {
-      console.error("Failed to delete resource type:", error);
+      console.error("Delete error:", error);
     }
   };
 
   return (
-    <div className="flex h-screen">
-      <div className="flex-1 overflow-auto">
-        <div className="p-6 bg-[#EDEEF1]">
-          <div className="mb-10">
-            <PageHeader
-              onButtonClick={handleAddResource}
-              title="Resource Types List"
-              buttonText="Add Resource Type"
-            />
-            <p className="text-gray-500 -mt-4">
-              Dashboard &gt; Resource_Types_List
-            </p>
-          </div>
-
-          {isLoading ? (
-            <div className="flex h-[60vh] items-center justify-center bg-gray-50">
-              <div className="text-center">
-                {/* Optional: Remove this if you only want MoonLoader */}
-                {/* <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-600 mx-auto mb-4"></div> */}
-                <PuffLoader
-                  color="rgba(49, 23, 215, 1)"
-                  cssOverride={{}}
-                  loading
-                  speedMultiplier={1}
-                />
-              </div>
-            </div>
-          ) : isError ? (
-            <div className="text-red-500 text-center font-medium">
-              Failed to load data. Please try again later.
-            </div>
-          ) : isEmpty ? (
-            <div className="text-gray-500 text-center font-medium">
-              No resource types found.
-            </div>
-          ) : (
-            <DataTable
-              columns={columns}
-              data={currentData || []}
-              currentPage={currentPage}
-              totalPages={totalPages}
-              totalItems={totalItems}
-              itemsPerPage={itemsPerPage}
-              onPageChange={setCurrentPage}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              isDeleting={deleteMutation.isPending}
-            />
-          )}
+    <div className="w-full">
+      <div className="p-6 bg-[#EDEEF1] min-h-screen">
+        <div className="mb-10">
+          <PageHeader
+            onButtonClick={handleAddResource}
+            title="Resource Types List"
+            buttonText="Add Resource Type"
+          />
+          <p className="text-gray-500 -mt-4">Dashboard &gt; Resource_Types_List</p>
         </div>
+
+        {isLoading ? (
+          <div className="flex h-[60vh] items-center justify-center bg-gray-50">
+            <PuffLoader
+              color="rgba(49, 23, 215, 1)"
+              cssOverride={{}}
+              loading
+              speedMultiplier={1}
+            />
+          </div>
+        ) : isError ? (
+          <div className="text-red-500 text-center font-medium">
+            Failed to load data. Please try again later.
+          </div>
+        ) : isEmpty ? (
+          <div className="text-gray-500 text-center font-medium">
+            No resource types found.
+          </div>
+        ) : (
+          <DataTable
+            columns={columns}
+            data={currentData || []}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            isDeleting={deleteMutation.isPending}
+          />
+        )}
       </div>
     </div>
   );

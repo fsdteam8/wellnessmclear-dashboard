@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
+// import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
@@ -143,14 +143,7 @@ export default function SignInForm() {
           </div>
 
           {/* Forgot Password */}
-          <div className="flex items-center justify-end text-sm">
-            <Link
-              href="/forget-password"
-              className="text-red-900 hover:underline"
-            >
-              Forgot password?
-            </Link>
-          </div>
+       
 
           {/* General Error Message */}
 

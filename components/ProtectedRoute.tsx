@@ -11,10 +11,13 @@ export default function ProtectedRoute({
 }) {
   const { status } = useSession();
   const router = useRouter();
+  console.log(status)
 
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/login");
+    }else if(status === "authenticated"){
+      router.push("/");
     }
   }, [status, router]);
 

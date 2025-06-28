@@ -7,7 +7,7 @@ import "../globals.css";
 import { Sidebar } from "@/components/sidebar";
 import Header from "@/components/header";
 import AppProvider from "@/provider/AppProvider";
-// import ProtectedRoute from "@/components/ProtectedRoute";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 export const metadata: Metadata = {
   title: "Lawbie - Admin Dashboard",
@@ -20,7 +20,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    // <ProtectedRoute>
+    <ProtectedRoute>
         <AppProvider>
         <Header />
         <div className="flex">
@@ -29,7 +29,7 @@ export default async function RootLayout({
         </div>
         {/* <Toaster /> */}
       </AppProvider>
-      // </ProtectedRoute>
+      </ProtectedRoute>
     
   );
 }

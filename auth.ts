@@ -8,19 +8,6 @@ export const adminAuthOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   session: {
     strategy: "jwt",
-    maxAge: 60 * 60 * 24 * 10,
-    updateAge: 60 * 60 * 24,
-  },
-  cookies: {
-    sessionToken: {
-      name: "admin-auth.session-token",
-      options: {
-        httpOnly: true,
-        sameSite: "lax",
-        path: "/",
-        secure: process.env.NODE_ENV === "production",
-      },
-    },
   },
   providers: [
     CredentialsProvider({
@@ -48,6 +35,8 @@ export const adminAuthOptions: NextAuthOptions = {
           );
 
           const data = await res.json();
+
+          console.log(data)
 
           if (!res.ok || !data.data?.accessToken || !data?.data.user) {
             throw new Error(data?.message || "Invalid credentials");

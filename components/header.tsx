@@ -10,7 +10,7 @@ export default function Header() {
   console.log('user', user);
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 flex h-16 items-center justify-between px-6 bg-[#525773] shadow-md">
+    <div className="fixed top-0 left-0 right-0 z-50 flex h-16 items-center justify-between px-6 bg-[#2F3E34] shadow-md">
       <div className="flex items-center space-x-2"></div>
       <div className="flex items-center space-x-3">
         <div className="flex items-center space-x-2 text-white text-sm">

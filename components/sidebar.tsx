@@ -26,7 +26,7 @@ const navigation = [
   { name: "Practice Areas", href: "/practice-area", icon: Tag },
   { name: "Resource Types", href: "/resource-type", icon: Tag },
   { name: "Promo Code", href: "/promo-code", icon: Ticket },
-  { name: "Resource List", href: "/resource-list", icon: List },
+  { name: "Services", href: "/services", icon: List },
   { name: "Request Resource", href: "/request-resource", icon: FileText },
   // { name: "Message", href: "/message", icon: MessageSquare },
   { name: "My Sales", href: "/my-sales", icon: TrendingUp },
@@ -47,7 +47,7 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <div className="flex h-screen sticky bottom-0 top-0 w-[350px] flex-col bg-[#393C50] z-50">
+    <div className="flex h-screen sticky bottom-0 top-0 w-[350px] flex-col bg-[#2F3E34] z-50">
       <div className="h-[80px] px-4 py-3">
         <Image
           src="/images/authImg.svg"

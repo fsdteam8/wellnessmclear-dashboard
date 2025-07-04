@@ -22,12 +22,12 @@ interface ApiResourceRequest {
   price: number;
   discountPrice: number;
   quantity: number;
-  format: string;
+  overview: string;
   file: {
     url: string | null;
     type: string | null;
   };
-  thumbnail: string;
+  whomImage: string;
   createdBy: {
     _id: string;
     firstName: string;
@@ -65,7 +65,7 @@ const fetchResources = async (
   limit: number = 10
 ): Promise<ApiResponse> => {
   const response = await fetch(
-    `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/resource/get-all-resources?page=${page}&limit=${limit}&status=approved`
+    `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/service?page=${page}&limit=${limit}`
   );
 
   if (!response.ok) {
@@ -78,7 +78,6 @@ const fetchResources = async (
   return response.json();
 };
 
-// ✅ Fixed DELETE resource function
 const deleteResource = async (
   resourceId: string,
   token: string
@@ -122,7 +121,7 @@ const transformResourceData = (
       price: `$${resource.price}`,
       discountPrice: `$${resource.discountPrice}`,
       quantity: resource.quantity,
-      format: resource.format,
+      format: resource.overview,
       date:
         new Date(resource.createdAt).toLocaleDateString() +
         "\n" +
@@ -130,7 +129,7 @@ const transformResourceData = (
           hour: "2-digit",
           minute: "2-digit",
         }),
-      thumbnail: resource.thumbnail || "/placeholder.svg?height=40&width=40",
+      thumbnail: resource.whomImage || "/placeholder.svg?height=40&width=40",
     })
   );
 };
@@ -155,8 +154,8 @@ const columns = [
   },
   { key: "originalId", label: "Id" },
   { key: "price", label: "Price" },
-  { key: "discountPrice", label: "Discount Price" },
-  { key: "quantity", label: "Quantity" },
+  // { key: "discountPrice", label: "Discount Price" },
+  // { key: "quantity", label: "Quantity" },
   { key: "format", label: "Format" },
   {
     key: "date",

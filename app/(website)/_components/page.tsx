@@ -62,7 +62,8 @@ export default function Dashboard() {
   const session = useSession();
   console.log("session", session);
 
-  const TOKEN = session?.data?.accessToken;
+  // const TOKEN = session?.data?.accessToken;
+  const TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2ODYzODNkOGUwNmVlZTE4Mzg3ZmU0YjAiLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc1MTM1MjM2MCwiZXhwIjoxNzUyNjQ4MzYwfQ.eD__xJOgkOUyJqExQg7fUuHb5dqPA970UkN3aT9ZzuM"
 
   const [selectedRevenuePeriod, setSelectedRevenuePeriod] = useState<
     "day" | "week" | "month" | "year"

@@ -7,7 +7,6 @@ import {
   LayoutDashboard,
   Tag,
   Ticket,
-  List,
   TrendingUp,
   DollarSign,
   FileText,
@@ -18,15 +17,17 @@ import {
   Reply,
   // Bell,
 } from "lucide-react";
+import { Ri24HoursLine } from "react-icons/ri";
+import { BiCategoryAlt } from "react-icons/bi";
 import Image from "next/image";
 import { signOut } from "next-auth/react";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
-  { name: "Practice Areas", href: "/practice-area", icon: Tag },
+  { name: "Category", href: "/category", icon: BiCategoryAlt },
   { name: "Resource Types", href: "/resource-type", icon: Tag },
   { name: "Promo Code", href: "/promo-code", icon: Ticket },
-  { name: "Services", href: "/services", icon: List },
+  { name: "Services", href: "/services", icon:  Ri24HoursLine},
   { name: "Request Resource", href: "/request-resource", icon: FileText },
   // { name: "Message", href: "/message", icon: MessageSquare },
   { name: "My Sales", href: "/my-sales", icon: TrendingUp },
@@ -48,11 +49,11 @@ export function Sidebar() {
 
   return (
     <div className="flex h-screen sticky bottom-0 top-0 w-[350px] flex-col bg-[#2F3E34] z-50">
-      <div className="h-[80px] px-4 py-3">
+      <div className="h-[50px] px-4 py-3">
         <Image
-          src="/images/authImg.svg"
+          src="/images/wmcImage.svg"
           alt="Logo"
-          width={200}
+          width={100}
           height={80}
           className="h-full w-full object-contain"
         />

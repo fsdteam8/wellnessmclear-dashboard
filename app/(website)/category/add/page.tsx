@@ -1,10 +1,10 @@
 import React from 'react'
-import ServiceEdit from './_components/ServiceEdit'
+import CategoryAdd from './_components/CategoryAdd'
 
 function page() {
   return (
     <div>
-<ServiceEdit />      
+      <CategoryAdd />
     </div>
   )
 }

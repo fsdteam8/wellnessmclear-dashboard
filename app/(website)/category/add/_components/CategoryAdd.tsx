@@ -7,9 +7,9 @@ import { useMutation } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-// import { useToast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
+import { X } from "lucide-react";
 import { Save } from "lucide-react";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
@@ -20,10 +20,8 @@ declare module "next-auth" {
   }
 }
 
-export default function AddPracticeAreaPage() {
+export default function CategoryAdd() {
   const router = useRouter();
-  // const { toast } = useToast();
-
   const session = useSession();
   console.log("session", session);
 
@@ -31,12 +29,14 @@ export default function AddPracticeAreaPage() {
 
   const [formData, setFormData] = useState({
     name: "",
-    description: "",
+    subCategories: [] as { name: string }[],
   });
+
+  const [tagInput, setTagInput] = useState("");
 
   const mutation = useMutation({
     mutationFn: async (data: typeof formData) => {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/practice-area`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/category/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -54,22 +54,47 @@ export default function AddPracticeAreaPage() {
     },
     onSuccess: (success) => {
       toast.success(success.message)
-      router.push("/practice-area");
+      router.push("/category");
     },
     onError: (error) => {
       toast.error(error.message)
     },
   });
 
+  const handleTagInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      addTag();
+    }
+  };
+
+  const addTag = () => {
+    const trimmedValue = tagInput.trim();
+    if (trimmedValue && !formData.subCategories.some(tag => tag.name === trimmedValue)) {
+      setFormData(prev => ({
+        ...prev,
+        subCategories: [...prev.subCategories, { name: trimmedValue }]
+      }));
+      setTagInput("");
+    }
+  };
+
+  const removeTag = (indexToRemove: number) => {
+    setFormData(prev => ({
+      ...prev,
+      subCategories: prev.subCategories.filter((_, index) => index !== indexToRemove)
+    }));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!formData.name.trim()) {
-      toast.error("Practice-area name is required");
+      toast.error("Category name is required");
       return;
     }
 
-    // Log form data
+    // Log form data in the requested format
     console.log("Form Data Submitted:", formData);
 
     mutation.mutate(formData);
@@ -80,8 +105,8 @@ export default function AddPracticeAreaPage() {
       <div className="flex-1 overflow-auto">
         <div>
           <div className="mb-6">
-            <h1 className="text-2xl font-semibold text-gray-900">Add Practice-area</h1>
-            <p className="text-gray-500">Dashboard &gt; Practice-area</p>
+            <h1 className="text-2xl font-semibold text-gray-900">Add Category</h1>
+            <p className="text-gray-500">Dashboard &gt; Category</p>
           </div>
 
           <div className="pt-10">
@@ -89,7 +114,7 @@ export default function AddPracticeAreaPage() {
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
-                <Label htmlFor="name">Practice-area Name</Label>
+                <Label htmlFor="name">Category Name</Label>
                 <Input
                   id="name"
                   placeholder="Type category name here..."
@@ -100,14 +125,36 @@ export default function AddPracticeAreaPage() {
               </div>
 
               <div>
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  placeholder="Type category description here..."
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="mt-1 min-h-[120px] border border-[#707070]"
-                />
+                <Label htmlFor="subCategories">Sub Categories</Label>
+                <div className="mt-3">
+                  <Input
+                    id="subCategories"
+                    placeholder="Type sub category and press Enter or comma..."
+                    value={tagInput}
+                    onChange={(e) => setTagInput(e.target.value)}
+                    onKeyDown={handleTagInputKeyDown}
+                    onBlur={addTag}
+                    className="h-[50px] border border-[#707070]"
+                  />
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    {formData.subCategories.map((tag, index) => (
+                      <Badge
+                        key={index}
+                        variant="secondary"
+                        className="px-3 py-1 text-sm bg-slate-100 hover:bg-slate-200 border border-slate-300"
+                      >
+                        {tag.name}
+                        <button
+                          type="button"
+                          onClick={() => removeTag(index)}
+                          className="ml-2 hover:text-red-500"
+                        >
+                          <X size={14} />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
               </div>
 
               <div className="flex justify-end">
@@ -127,4 +174,3 @@ export default function AddPracticeAreaPage() {
     </div>
   );
 }
-

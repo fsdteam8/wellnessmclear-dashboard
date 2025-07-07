@@ -59,13 +59,10 @@ interface ExtendedProduct extends Product {
   originalId: string;
 }
 
-// Fetch resources with pagination
-const fetchResources = async (
-  page: number = 1,
-  limit: number = 10
-): Promise<ApiResponse> => {
+// Fetch resources
+const fetchResources = async (page = 1, limit = 10): Promise<ApiResponse> => {
   const response = await fetch(
-    `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/service?page=${page}&limit=${limit}`
+    `${process.env.NEXT_PUBLIC_BACKEND_URL}/service?page=${page}&limit=${limit}`
   );
 
   if (!response.ok) {
@@ -78,12 +75,13 @@ const fetchResources = async (
   return response.json();
 };
 
+// Delete resource
 const deleteResource = async (
-  resourceId: string,
+  serviceId: string,
   token: string
 ): Promise<void> => {
   const response = await fetch(
-    `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/resource/${resourceId}`,
+    `${process.env.NEXT_PUBLIC_BACKEND_URL}/service/${serviceId}`,
     {
       method: "DELETE",
       headers: {
@@ -93,16 +91,8 @@ const deleteResource = async (
     }
   );
 
-  let result: { success: boolean; message?: string } = { success: true };
-
-  try {
-    const text = await response.text();
-    if (text) {
-      result = JSON.parse(text);
-    }
-  } catch (err) {
-    console.warn("Failed to parse JSON from delete response:", err);
-  }
+  const text = await response.text();
+  const result = text ? JSON.parse(text) : { success: true };
 
   if (!response.ok || result?.success === false) {
     throw new Error(result?.message || "Failed to delete resource");
@@ -142,7 +132,7 @@ const columns = [
     render: (value: string, row: ExtendedProduct) => (
       <div className="flex items-center space-x-3">
         <Image
-          src={row.thumbnail || "/placeholder.svg?height=40&width=40"}
+          src={row.thumbnail}
           alt="Resource thumbnail"
           width={40}
           height={40}
@@ -154,8 +144,6 @@ const columns = [
   },
   { key: "originalId", label: "Id" },
   { key: "price", label: "Price" },
-  // { key: "discountPrice", label: "Discount Price" },
-  // { key: "quantity", label: "Quantity" },
   { key: "format", label: "Format" },
   {
     key: "date",
@@ -182,7 +170,7 @@ export default function ResourceListPage() {
     error,
     refetch,
   } = useQuery({
-    queryKey: ["resources", "approved", currentPage, itemsPerPage],
+    queryKey: ["services", currentPage, itemsPerPage],
     queryFn: () => fetchResources(currentPage, itemsPerPage),
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
@@ -190,52 +178,50 @@ export default function ResourceListPage() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (resourceId: string) => deleteResource(resourceId, TOKEN),
+    mutationFn: (serviceId: string) => deleteResource(serviceId, TOKEN),
     onMutate: async (deletedId) => {
-      await queryClient.cancelQueries({ queryKey: ["resources", "approved"] });
+      await queryClient.cancelQueries({ queryKey: ["services", currentPage, itemsPerPage] });
 
-      const previousData = queryClient.getQueryData([
-        "resources",
-        "approved",
+      const previousData = queryClient.getQueryData<ApiResponse>([
+        "services",
         currentPage,
         itemsPerPage,
       ]);
 
-      queryClient.setQueryData(
-        ["resources", "approved", currentPage, itemsPerPage],
-        (old: ApiResponse | undefined) => {
-          if (!old) return old;
-          return {
-            ...old,
-            data: old.data.filter((item) => item._id !== deletedId),
-            pagination: {
-              ...old.pagination,
-              totalItems: old.pagination.totalItems - 1,
-            },
-          };
-        }
-      );
+      queryClient.setQueryData(["services", currentPage, itemsPerPage], (old?: ApiResponse) => {
+        if (!old) return old;
+        return {
+          ...old,
+          data: old.data.filter((item) => item._id !== deletedId),
+          pagination: {
+            ...old.pagination,
+            totalItems: old.pagination.totalItems - 1,
+          },
+        };
+      });
 
       return { previousData };
     },
-    onError: (err) => {
+    onError: (err, deletedId, context) => {
       toast.error(`${(err as Error).message || "Failed to delete resource"}`);
-      console.log("Delete failed:", err);
+      if (context?.previousData) {
+        queryClient.setQueryData(["services", currentPage, itemsPerPage], context.previousData);
+      }
     },
     onSuccess: () => {
-      toast.success("Delete successfully!");
+      toast.success("Deleted successfully!");
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["resources", "approved"] });
+      queryClient.invalidateQueries({ queryKey: ["services", currentPage, itemsPerPage] });
     },
   });
 
   const handleAddResource = () => {
-    router.push("/resource-list/add");
+    router.push("/services/add");
   };
 
   const handleEdit = (resource: ExtendedProduct) => {
-    router.push(`/resource-list/edit/${resource.originalId}`);
+    router.push(`/services/edit/${resource.originalId}`);
   };
 
   const handleDelete = (resource: ExtendedProduct) => {
@@ -265,12 +251,7 @@ export default function ResourceListPage() {
           <p className="text-gray-500 -mt-4">Dashboard &gt; Resource List</p>
         </div>
         <div className="flex items-center justify-center min-h-[60vh]">
-          <PuffLoader
-            color="rgba(49, 23, 215, 1)"
-            loading
-            speedMultiplier={1}
-            size={60}
-          />
+          <PuffLoader color="rgba(49, 23, 215, 1)" loading size={60} />
         </div>
       </div>
     );

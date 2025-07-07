@@ -1,10 +1,10 @@
 import React from 'react'
-import BlogAdd from './_components/BlogAdd'
+import ProductAddForm from './_components/ProductAdd'
 
 function page() {
   return (
     <div>
-      <BlogAdd />
+      <ProductAddForm />
     </div>
   )
 }

@@ -25,9 +25,9 @@ import { signOut } from "next-auth/react";
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Category", href: "/category", icon: BiCategoryAlt },
-  { name: "Resource Types", href: "/resource-type", icon: Tag },
+  { name: "Products", href: "/products", icon: Tag },
   { name: "Promo Code", href: "/promo-code", icon: Ticket },
-  { name: "Services", href: "/services", icon:  Ri24HoursLine},
+  { name: "Services", href: "/services", icon: Ri24HoursLine },
   { name: "Request Resource", href: "/request-resource", icon: FileText },
   // { name: "Message", href: "/message", icon: MessageSquare },
   { name: "My Sales", href: "/my-sales", icon: TrendingUp },
@@ -39,7 +39,7 @@ const navigation = [
   { name: "Blog Management", href: "/blog-management", icon: FileText },
   { name: "Seller Profile", href: "/seller-profile", icon: User },
   { name: "User Profile", href: "/user-profile", icon: User },
-  {name: "NewsLetter", href:"/news-letter", icon: Mails  },
+  { name: "NewsLetter", href: "/news-letter", icon: Mails },
   { name: "Setting", href: "/setting", icon: Settings },
   { name: "Reply To Question", href: "/reply-to-question", icon: Reply },
 ];
@@ -85,7 +85,10 @@ export function Sidebar() {
       </nav>
 
       {/* Logout */}
-      <div className="p-3 cursor-pointer" onClick={() => signOut({ callbackUrl: "/login" })}>
+      <div
+        className="p-3 cursor-pointer"
+        onClick={() => signOut({ callbackUrl: "/login" })}
+      >
         <p className="flex items-center space-x-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-600 hover:text-white">
           <LogOut className="h-5 w-5" />
           <span>Log Out</span>

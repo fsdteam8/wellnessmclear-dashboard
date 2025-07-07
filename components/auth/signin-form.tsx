@@ -86,11 +86,11 @@ export default function SignInForm() {
 
   {/* Right: Form (Half Width) */}
   <div className="w-full md:w-1/2 flex items-center justify-center p-6 bg-white">
-    <div className="w-full max-w-lg rounded-xl sm:p-8 shadow-[0px_0px_56px_0px_#00000029]">
-      <h2 className="text-center text-2xl font-semibold mb-2">
+    <div className="w-full rounded-xl sm:p-8">
+      <h2 className="text-2xl font-semibold mb-2">
         Welcome Back!
       </h2>
-      <h3 className="text-center text-[#787878] text-base font-medium mb-10">
+      <h3 className=" text-[#787878] text-base font-medium mb-10">
         Enter to get unlimited data & information
       </h3>
 

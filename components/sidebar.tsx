@@ -6,15 +6,10 @@ import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
   Tag,
-  Ticket,
-  TrendingUp,
-  DollarSign,
   FileText,
-  User,
-  Settings,
+ 
   LogOut,
-  Mails,
-  Reply,
+  Settings,
   // Bell,
 } from "lucide-react";
 import { Ri24HoursLine } from "react-icons/ri";
@@ -26,22 +21,24 @@ const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Category", href: "/category", icon: BiCategoryAlt },
   { name: "Products", href: "/products", icon: Tag },
-  { name: "Promo Code", href: "/promo-code", icon: Ticket },
-  { name: "Services", href: "/services", icon: Ri24HoursLine },
-  { name: "Request Resource", href: "/request-resource", icon: FileText },
-  // { name: "Message", href: "/message", icon: MessageSquare },
-  { name: "My Sales", href: "/my-sales", icon: TrendingUp },
-  {
-    name: "Revenue from Seller",
-    href: "/revenue-from-seller",
-    icon: DollarSign,
-  },
   { name: "Blog Management", href: "/blog-management", icon: FileText },
-  { name: "Seller Profile", href: "/seller-profile", icon: User },
-  { name: "User Profile", href: "/user-profile", icon: User },
-  { name: "NewsLetter", href: "/news-letter", icon: Mails },
-  { name: "Setting", href: "/setting", icon: Settings },
-  { name: "Reply To Question", href: "/reply-to-question", icon: Reply },
+  { name: "Services", href: "/services", icon: Ri24HoursLine },
+  // { name: "Promo Code", href: "/promo-code", icon: Ticket },
+  
+  // { name: "Request Resource", href: "/request-resource", icon: FileText },
+  // { name: "Message", href: "/message", icon: MessageSquare },
+  // { name: "My Sales", href: "/my-sales", icon: TrendingUp },
+  // {
+  //   name: "Revenue from Seller",
+  //   href: "/revenue-from-seller",
+  //   icon: DollarSign,
+  // },
+  
+  // { name: "Seller Profile", href: "/seller-profile", icon: User },
+  // { name: "User Profile", href: "/user-profile", icon: User },
+  // { name: "NewsLetter", href: "/news-letter", icon: Mails },
+  { name: "Setting", href: "/setting", icon: Settings},
+  // { name: "Reply To Question", href: "/reply-to-question", icon: Reply },
 ];
 
 export function Sidebar() {

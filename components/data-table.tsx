@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 //ts-ignore-file
 "use client";
 
@@ -19,6 +18,7 @@ import {
   MessageCircle,
   Trash2,
 } from "lucide-react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
 import { ChatModal } from "./ChatModal";
 import { usePathname } from "next/navigation";
@@ -314,4 +314,3 @@ export function DataTable<
     </div>
   );
 }
-

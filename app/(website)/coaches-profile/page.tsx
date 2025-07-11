@@ -8,9 +8,8 @@ import { DataTable } from "@/components/data-table";
 import { PuffLoader } from "react-spinners";
 import { useSession } from "next-auth/react";
 import { Trash2 } from "lucide-react";
-import { toast } from "sonner"; // or your preferred toast library
+import { toast } from "sonner";
 
-// Updated interface to match actual API response
 interface Coach {
   _id: string;
   firstName: string;
@@ -39,7 +38,6 @@ interface Coach {
     title: string;
     description: string;
     price: number;
-    // ... other service fields
   };
   accepted: boolean;
   availability: {
@@ -76,10 +74,8 @@ export default function SellerProfilePage() {
 
   const session = useSession();
   const TOKEN = session?.data?.accessToken;
-  console.log("token", TOKEN)
   const queryClient = useQueryClient();
 
-  // Fetch list of coaches with pagination
   const { data, error, isLoading } = useQuery<ApiResponse>({
     queryKey: ["coaches", currentPage],
     queryFn: async () => {
@@ -88,17 +84,16 @@ export default function SellerProfilePage() {
         {
           headers: {
             "Content-Type": "application/json",
-            // Authorization: `Bearer ${TOKEN}`,
+            Authorization: `Bearer ${TOKEN}`,
           },
         }
       );
       if (!res.ok) throw new Error("Failed to fetch coaches");
       return res.json();
     },
-    enabled: !!TOKEN, // Only run query when token is available
+    enabled: !!TOKEN,
   });
 
-  // Delete coach mutation
   const deleteCoachMutation = useMutation({
     mutationFn: async (coachId: string) => {
       const res = await fetch(
@@ -111,81 +106,79 @@ export default function SellerProfilePage() {
           },
         }
       );
-      
+
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
         throw new Error(errorData.message || "Failed to delete coach");
       }
-      
+
       return res.json();
     },
     onMutate: async (coachId) => {
-      // Set loading state for specific coach
       setDeletingId(coachId);
-      
-      // Cancel any outgoing refetches
+
       await queryClient.cancelQueries({ queryKey: ["coaches", currentPage] });
-      
-      // Snapshot the previous value
-      const previousCoaches = queryClient.getQueryData<ApiResponse>(["coaches", currentPage]);
-      
-      // Optimistically update the cache
+
+      const previousCoaches = queryClient.getQueryData<ApiResponse>([
+        "coaches",
+        currentPage,
+      ]);
+
       queryClient.setQueryData<ApiResponse>(["coaches", currentPage], (old) => {
         if (!old) return old;
-        
+
         return {
           ...old,
           data: {
             ...old.data,
-            coaches: old.data.coaches.filter(coach => coach._id !== coachId),
+            coaches: old.data.coaches.filter((coach) => coach._id !== coachId),
             pagination: {
               ...old.data.pagination,
               totalCount: old.data.pagination.totalCount - 1,
-            }
-          }
+            },
+          },
         };
       });
-      
-      // Return a context object with the snapshotted value
+
       return { previousCoaches };
     },
     onError: (err, coachId, context) => {
-      // If the mutation fails, use the context returned from onMutate to roll back
       if (context?.previousCoaches) {
-        queryClient.setQueryData(["coaches", currentPage], context.previousCoaches);
+        queryClient.setQueryData(
+          ["coaches", currentPage],
+          context.previousCoaches
+        );
       }
-      
-      // Show error toast
+
       toast.error(err.message || "Failed to delete coach");
-      console.error("Delete error:", err);
     },
-    onSuccess: () => {
-      // Show success toast
+    onSuccess: async () => {
       toast.success("Coach deleted successfully");
-      
-      // Invalidate and refetch
-      queryClient.invalidateQueries({ queryKey: ["coaches"] });
-      
-      // If we're on a page with no items after deletion, go to previous page
-      const currentCoaches = queryClient.getQueryData<ApiResponse>(["coaches", currentPage]);
-      if (currentCoaches && currentCoaches.data.coaches.length === 0 && currentPage > 1) {
+
+      await queryClient.invalidateQueries({ queryKey: ["coaches", currentPage] });
+
+      const currentCoaches = queryClient.getQueryData<ApiResponse>([
+        "coaches",
+        currentPage,
+      ]);
+      if (
+        currentCoaches &&
+        currentCoaches.data.coaches.length === 0 &&
+        currentPage > 1
+      ) {
         setCurrentPage(currentPage - 1);
       }
     },
     onSettled: () => {
-      // Always clear the loading state
       setDeletingId(null);
     },
   });
 
-  // Handle delete with confirmation
   const handleDeleteCoach = async (coach: Coach) => {
     const confirmed = window.confirm(
       `Are you sure you want to delete ${coach.firstName} ${coach.lastName}? This action cannot be undone.`
     );
 
-    console.log("caoah", coach)
-    
     if (confirmed) {
       deleteCoachMutation.mutate(coach._id);
     }
@@ -194,14 +187,7 @@ export default function SellerProfilePage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <PuffLoader
-            color="rgba(49, 23, 215, 1)"
-            loading
-            speedMultiplier={1}
-            size={60}
-          />
-        </div>
+        <PuffLoader color="rgba(49, 23, 215, 1)" size={60} />
       </div>
     );
   }
@@ -209,9 +195,7 @@ export default function SellerProfilePage() {
   if (error) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center text-red-500">
-          <p>Error loading coaches: {error.message}</p>
-        </div>
+        <p className="text-red-500">Error loading coaches: {error.message}</p>
       </div>
     );
   }
@@ -296,7 +280,7 @@ export default function SellerProfilePage() {
             </div>
           </div>
 
-          <div className="">
+          <div className="border">
             <DataTable
               columns={columns}
               data={coaches}

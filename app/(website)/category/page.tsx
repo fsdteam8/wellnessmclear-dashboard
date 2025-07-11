@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/page-header";
 import { DataTable } from "@/components/data-table";
-import { Badge } from "@/components/ui/badge";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
@@ -34,12 +33,12 @@ const columns: Column[] = [
     key: "name",
     label: "Name",
     render: (value) => (
-      <Badge
-        variant="secondary"
-        className="bg-slate-600 text-white px-4 py-2 cursor-pointer hover:bg-slate-500 transition-colors w-[200px]"
+      <p
+        
+        className="text-black text-base"
       >
         {(value as string).slice(0, 20)}
-      </Badge>
+      </p>
     ),
   },
   {
@@ -152,11 +151,11 @@ export default function CategoriesPage() {
           <div className="mb-10">
             <PageHeader
               onButtonClick={handleAddCategory}
-              title="Practice Areas List"
-              buttonText="Add Practice Area"
+              title="Category List"
+              buttonText="Add Category"
             />
             <p className="text-gray-500 -mt-4">
-              Dashboard &gt; Practice_Areas_List
+              Dashboard &gt; Category_List
             </p>
           </div>
 

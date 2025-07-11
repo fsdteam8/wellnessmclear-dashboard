@@ -10,6 +10,8 @@ import {
  
   LogOut,
   Settings,
+  User,
+  Users,
   // Bell,
 } from "lucide-react";
 import { Ri24HoursLine } from "react-icons/ri";
@@ -34,7 +36,8 @@ const navigation = [
   //   icon: DollarSign,
   // },
   
-  // { name: "Seller Profile", href: "/seller-profile", icon: User },
+  { name: "Coaches Profile", href: "/coaches-profile", icon: User},
+  { name: "Coaches Request", href: "/coaches-request", icon: Users },
   // { name: "User Profile", href: "/user-profile", icon: User },
   // { name: "NewsLetter", href: "/news-letter", icon: Mails },
   { name: "Setting", href: "/setting", icon: Settings},

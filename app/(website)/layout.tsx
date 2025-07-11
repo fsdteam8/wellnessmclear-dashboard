@@ -10,7 +10,7 @@ import AppProvider from "@/provider/AppProvider";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
 export const metadata: Metadata = {
-  title: "Lawbie - Admin Dashboard",
+  title: "WellnessmClear | Dashboard",
   description: "Ecommerce Admin Dashboard",
 };
 

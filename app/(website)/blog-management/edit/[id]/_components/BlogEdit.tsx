@@ -23,7 +23,7 @@ interface Blog {
   _id: string;
   title: string;
   description: string;
-  thumbnail: string | null;
+  image: string | null; // Changed from 'thumbnail' to 'image'
   createdAt: string;
   updatedAt: string;
 }
@@ -31,7 +31,7 @@ interface Blog {
 interface BlogResponse {
   status: boolean;
   message: string;
-  data: Blog;
+  data: Blog[]; // Changed to array since API returns array
 }
 
 export default function BlogEdit() {
@@ -59,6 +59,7 @@ export default function BlogEdit() {
   const [existingThumbnail, setExistingThumbnail] = useState<string | null>(
     null
   );
+  
   // Fetch existing blog data
   const {
     data: blogData,
@@ -68,7 +69,7 @@ export default function BlogEdit() {
     queryKey: ["blog", blogId],
     queryFn: async () => {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/blog/${blogId}`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/blog/${blogId}`,
         {
           headers: {
             Authorization: `Bearer ${TOKEN}`,
@@ -80,18 +81,21 @@ export default function BlogEdit() {
       }
       return res.json() as Promise<BlogResponse>;
     },
-    enabled: !!blogId,
+    enabled: !!blogId && !!TOKEN,
   });
+
+  console.log("blog", blogData)
 
   // Pre-fill form when blog data is loaded
   useEffect(() => {
-    if (blogData?.data) {
+    if (blogData?.data && blogData.data.length > 0) {
+      const blog = blogData.data[0]; // Get the first (and likely only) blog from the array
       setFormData({
-        title: blogData.data.title || "",
-        description: blogData.data.description || "",
+        title: blog.title || "",
+        description: blog.description || "",
       });
-      setExistingThumbnail(blogData.data.thumbnail);
-      setThumbnailPreview(blogData.data.thumbnail);
+      setExistingThumbnail(blog.image); // Changed from 'thumbnail' to 'image'
+      setThumbnailPreview(blog.image); // Changed from 'thumbnail' to 'image'
     }
   }, [blogData]);
 
@@ -141,7 +145,7 @@ export default function BlogEdit() {
   const updateBlogMutation = useMutation({
     mutationFn: async (data: FormData) => {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/blog/${blogId}`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/blog/${blogId}`,
         {
           method: "PUT",
           headers: {
@@ -227,7 +231,7 @@ export default function BlogEdit() {
     blogFormData.append("description", formData.description);
 
     if (thumbnail) {
-      blogFormData.append("thumbnail", thumbnail);
+      blogFormData.append("image", thumbnail);
     }
 
     console.log("=== UPDATING BLOG ===");
@@ -249,14 +253,6 @@ export default function BlogEdit() {
     // Submit the form data using the mutation
     updateBlogMutation.mutate(blogFormData);
   };
-
-  //   const handleAddBlog = () => {
-  //     router.push("/blog-management/add")
-  //   }
-
-  //   const handleBack = () => {
-  //     router.push("/blog-management")
-  //   }
 
   if (isFetchingBlog) {
     return (

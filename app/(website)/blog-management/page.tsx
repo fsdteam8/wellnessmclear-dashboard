@@ -77,7 +77,7 @@ const columns: BlogColumn[] = [
       <div className="flex items-start space-x-3 max-w-md">
         <div className="w-[100px] h-[60px]">
           <ImageWithFallback
-            src={row.image}  // corrected from row.thumbnail to row.image to match your response
+            src={row.image}
             alt="Blog thumbnail"
             width={80}
             height={60}
@@ -142,8 +142,12 @@ export default function BlogManagementPage() {
 
   const deleteMutation = useMutation({
     mutationFn: async (blog: Blog) => {
-      const blogId = blog._id || blog.id
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/blog/${blogId}`, {
+      const blogSlug = blog.slug
+      if (!blogSlug) {
+        throw new Error("Blog slug is required for deletion")
+      }
+      
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/blog/${blogSlug}`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
@@ -156,7 +160,7 @@ export default function BlogManagementPage() {
         throw new Error(errorData.message || "Failed to delete blog")
       }
 
-      return blogId
+      return blogSlug
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["blog"] })
@@ -183,10 +187,19 @@ export default function BlogManagementPage() {
   }
 
   const handleEdit = (blog: Blog) => {
-    router.push(`/blog-management/edit/${blog._id}`)
+    if (!blog.slug) {
+      console.error("Blog slug is missing")
+      return
+    }
+    router.push(`/blog-management/edit/${blog.slug}`)
   }
 
   const handleDelete = async (blog: Blog) => {
+    if (!blog.slug) {
+      console.error("Blog slug is missing")
+      return
+    }
+    
     try {
       await deleteMutation.mutateAsync(blog)
       // success handling here
@@ -208,9 +221,12 @@ export default function BlogManagementPage() {
           <Breadcrumb items={[{ label: "Dashboard", href: "/" }, { label: "Blog management" }]} />
 
           {isLoading ? (
-            // your skeleton loader code (unchanged)
             <div className="space-y-4">
-              {/* ... same skeleton loading markup as you had ... */}
+              {/* Add your skeleton loader code here */}
+              <div className="animate-pulse">
+                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+              </div>
             </div>
           ) : error ? (
             <div className="p-4 border border-red-200 bg-red-50 text-red-700 rounded-md">

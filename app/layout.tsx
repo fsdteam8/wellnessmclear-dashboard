@@ -8,7 +8,7 @@ import AuthProvider from "@/provider/AuthProvider";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Lawbie - Admin Dashboard",
+  title: "WellnessmClear | Dashboard",
   description: "Ecommerce Admin Dashboard",
 };
 

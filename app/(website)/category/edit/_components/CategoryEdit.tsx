@@ -1,7 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import type React from "react";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useMutation, useQuery } from "@tanstack/react-query";
 
@@ -9,10 +10,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { X } from "lucide-react";
-import { Save } from "lucide-react";
+import { X, Save } from "lucide-react";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
+import Image from "next/image";
 
 declare module "next-auth" {
   interface Session {
@@ -24,6 +25,7 @@ interface CategoryData {
   _id: string;
   name: string;
   subCategories: { name: string }[];
+  categoryImage: string;
   createdAt: string;
   updatedAt: string;
   __v: number;
@@ -40,18 +42,19 @@ export default function CategoryEdit() {
   const session = useSession();
   const params = useParams();
   const id = params?.id as string;
-
   const TOKEN = session?.data?.accessToken;
 
   const [formData, setFormData] = useState({
     name: "",
     subCategories: [] as { name: string }[],
+    categoryImage: "",
+    imageFile: null as File | null,
   });
 
   const [tagInput, setTagInput] = useState("");
   const [isRemovingTag, setIsRemovingTag] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
-  // Fetch single category data
   const { data: categoryData, isLoading, error } = useQuery({
     queryKey: ["category", id],
     queryFn: async (): Promise<ApiResponse> => {
@@ -61,35 +64,32 @@ export default function CategoryEdit() {
         },
       });
 
-      if (!res.ok) {
-        throw new Error("Failed to fetch category");
-      }
-
+      if (!res.ok) throw new Error("Failed to fetch category");
       return res.json();
     },
-    enabled: !!id && !!TOKEN, // Only run query when id and token are available
+    enabled: !!id && !!TOKEN,
   });
 
-  // Populate form data when category data is fetched
   useEffect(() => {
     if (categoryData?.data) {
       setFormData({
         name: categoryData.data.name,
         subCategories: categoryData.data.subCategories,
+        categoryImage: categoryData.data.categoryImage,
+        imageFile: null,
       });
+      setImagePreview(categoryData.data.categoryImage);
     }
   }, [categoryData]);
 
-  // Update category mutation
   const mutation = useMutation({
-    mutationFn: async (data: typeof formData) => {
+    mutationFn: async (data: FormData) => {
       const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/category/${id}`, {
         method: "PUT",
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${TOKEN}`,
         },
-        body: JSON.stringify(data),
+        body: data,
       });
 
       if (!response.ok) {
@@ -103,7 +103,7 @@ export default function CategoryEdit() {
       toast.success(success.message || "Category updated successfully");
       router.push("/category");
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast.error(error.message || "Failed to update category");
     },
   });
@@ -116,22 +116,18 @@ export default function CategoryEdit() {
   };
 
   const addTag = () => {
-    const trimmedValue = tagInput.trim();
-    if (trimmedValue && !formData.subCategories.some(tag => tag.name === trimmedValue)) {
+    const trimmed = tagInput.trim();
+    if (trimmed && !formData.subCategories.some(tag => tag.name === trimmed)) {
       setFormData(prev => ({
         ...prev,
-        subCategories: [...prev.subCategories, { name: trimmedValue }]
+        subCategories: [...prev.subCategories, { name: trimmed }],
       }));
       setTagInput("");
     }
   };
 
   const handleInputBlur = () => {
-    // Only add tag if input is not empty and we're not removing a tag
-    if (tagInput.trim() && !isRemovingTag) {
-      addTag();
-    }
-    // Reset the removing tag flag
+    if (tagInput.trim() && !isRemovingTag) addTag();
     setIsRemovingTag(false);
   };
 
@@ -139,8 +135,32 @@ export default function CategoryEdit() {
     setIsRemovingTag(true);
     setFormData(prev => ({
       ...prev,
-      subCategories: prev.subCategories.filter((_, index) => index !== indexToRemove)
+      subCategories: prev.subCategories.filter((_, i) => i !== indexToRemove),
     }));
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/jpg"];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Please upload JPEG, PNG, or GIF image");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be less than 5MB");
+      return;
+    }
+
+    setFormData(prev => ({ ...prev, imageFile: file }));
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setImagePreview(e.target?.result as string);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -151,33 +171,33 @@ export default function CategoryEdit() {
       return;
     }
 
-    // Log form data in the requested format
-    console.log("Form Data Submitted:", formData);
+    const data = new FormData();
+    data.append("name", formData.name);
+    formData.subCategories.forEach((tag, i) => {
+      data.append(`subCategories[${i}][name]`, tag.name);
+    });
+    if (formData.imageFile) {
+      data.append("categoryImage", formData.imageFile);
+    }
 
-    mutation.mutate(formData);
+    mutation.mutate(data);
   };
 
-  // Loading state
   if (isLoading) {
     return (
       <div className="flex h-screen bg-[#EDEEF1] p-6">
-        <div className="flex-1 overflow-auto">
-          <div className="flex items-center justify-center h-full">
-            <div className="text-lg">Loading category data...</div>
-          </div>
+        <div className="flex-1 flex justify-center items-center">
+          <p className="text-lg">Loading category data...</p>
         </div>
       </div>
     );
   }
 
-  // Error state
   if (error) {
     return (
       <div className="flex h-screen bg-[#EDEEF1] p-6">
-        <div className="flex-1 overflow-auto">
-          <div className="flex items-center justify-center h-full">
-            <div className="text-lg text-red-500">Error loading category data</div>
-          </div>
+        <div className="flex-1 flex justify-center items-center">
+          <p className="text-lg text-red-500">Error loading category data</p>
         </div>
       </div>
     );
@@ -186,16 +206,18 @@ export default function CategoryEdit() {
   return (
     <div className="flex h-screen bg-[#EDEEF1] p-6">
       <div className="flex-1 overflow-auto">
-        <div>
-          <div className="mb-6">
-            <h1 className="text-2xl font-semibold text-gray-900">Edit Category</h1>
-            <p className="text-gray-500">Dashboard &gt; Category &gt; Edit</p>
-          </div>
+        <div className="mb-6">
+          <h1 className="text-2xl font-semibold text-gray-900">Edit Category</h1>
+          <p className="text-gray-500">Dashboard &gt; Category &gt; Edit</p>
+        </div>
 
-          <div className="pt-10">
-            <h2 className="text-lg font-semibold mb-6">General Information</h2>
+        <form onSubmit={handleSubmit} className="pt-10 space-y-6">
+          <h2 className="text-lg font-semibold mb-4">General Information</h2>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="flex flex-col lg:flex-row gap-10">
+            {/* Left Column */}
+            <div className="flex-1 space-y-6">
+              {/* Category Name */}
               <div>
                 <Label htmlFor="name">Category Name</Label>
                 <Input
@@ -207,53 +229,75 @@ export default function CategoryEdit() {
                 />
               </div>
 
+              {/* Sub Categories */}
               <div>
                 <Label htmlFor="subCategories">Sub Categories</Label>
-                <div className="mt-3">
-                  <Input
-                    id="subCategories"
-                    placeholder="Type sub category and press Enter or comma..."
-                    value={tagInput}
-                    onChange={(e) => setTagInput(e.target.value)}
-                    onKeyDown={handleTagInputKeyDown}
-                    onBlur={handleInputBlur}
-                    className="h-[50px] border border-[#707070]"
-                  />
-                  <div className="flex flex-wrap gap-2 mt-3">
-                    {formData.subCategories.map((tag, index) => (
-                      <Badge
-                        key={index}
-                        variant="secondary"
-                        className="px-3 py-1 text-sm bg-slate-100 hover:bg-slate-200 border border-slate-300"
+                <Input
+                  id="subCategories"
+                  placeholder="Type sub category and press Enter or comma..."
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={handleTagInputKeyDown}
+                  onBlur={handleInputBlur}
+                  className="mt-3 h-[50px] border border-[#707070]"
+                />
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {formData.subCategories.map((tag, index) => (
+                    <Badge
+                      key={index}
+                      variant="secondary"
+                      className="px-3 py-1 text-sm bg-slate-100 hover:bg-slate-200 border border-slate-300"
+                    >
+                      {tag.name}
+                      <button
+                        type="button"
+                        onClick={() => removeTag(index)}
+                        onMouseDown={(e) => e.preventDefault()}
+                        className="ml-2 hover:text-red-500"
                       >
-                        {tag.name}
-                        <button
-                          type="button"
-                          onClick={() => removeTag(index)}
-                          onMouseDown={(e) => e.preventDefault()} // Prevent input blur
-                          className="ml-2 hover:text-red-500"
-                        >
-                          <X size={14} />
-                        </button>
-                      </Badge>
-                    ))}
-                  </div>
+                        <X size={14} />
+                      </button>
+                    </Badge>
+                  ))}
                 </div>
               </div>
+            </div>
 
-              <div className="flex justify-end">
-                <Button
-                  type="submit"
-                  disabled={mutation.isPending}
-                  className="bg-slate-600 hover:bg-slate-700"
-                >
-                  <span className="mr-2"><Save /></span>
-                  {mutation.isPending ? "Updating..." : "Update"}
-                </Button>
+            {/* Right Column - Image */}
+            <div className="w-full lg:w-1/3">
+              <Label htmlFor="image">Category Image</Label>
+              <div className="mt-3 space-y-4">
+                <Input
+                  id="image"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="w-full border border-[#707070]"
+                />
+                {imagePreview && (
+                  <Image
+                    src={imagePreview}
+                    width={300}
+                    height={300}
+                    alt="Preview"
+                    className="w-full h-40 object-cover rounded-md border"
+                  />
+                )}
               </div>
-            </form>
+            </div>
           </div>
-        </div>
+
+          <div className="flex justify-end pt-4">
+            <Button
+              type="submit"
+              disabled={mutation.isPending}
+              className="bg-slate-600 hover:bg-slate-700"
+            >
+              <Save className="mr-2" size={18} />
+              {mutation.isPending ? "Updating..." : "Update"}
+            </Button>
+          </div>
+        </form>
       </div>
     </div>
   );

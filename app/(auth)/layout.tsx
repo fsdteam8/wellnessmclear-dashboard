@@ -4,7 +4,7 @@ import "../globals.css";
 
 
 export const metadata: Metadata = {
-  title: "Lawbie - Admin Dashboard",
+  title: "WellnessmClear | Dashboard",
   description: "Ecommerce Admin Dashboard",
 };
 

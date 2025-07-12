@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { FileText, Image, Users, Gift, X, Loader2 } from "lucide-react";
 import NextImage from "next/image";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 
@@ -117,6 +117,7 @@ const ServiceEdit = () => {
   const params = useParams();
   const serviceId = params?.id as string;
   const { data: session } = useSession();
+  const router = useRouter();
 
   const [formData, setFormData] = useState({
     title: "",
@@ -164,8 +165,8 @@ const ServiceEdit = () => {
     mutationFn: updateService,
     onSuccess: (data) => {
       // Update the cache with the new data
+      router.push("/services")
       queryClient.setQueryData(["service", serviceId], data);
-      
       // Invalidate and refetch related queries
       queryClient.invalidateQueries({
         queryKey: ["services"], // Invalidate services list
@@ -371,45 +372,6 @@ const ServiceEdit = () => {
     };
   }, []);
 
-  // Reset form data
-  const resetForm = () => {
-    if (serviceResponse?.data) {
-      const service = serviceResponse.data;
-      setFormData({
-        title: service.title || "",
-        price: service.price?.toString() || "",
-        description: service.description || "",
-        overview: service.overview || "",
-        receive: service.receive || "",
-        whom: service.whom || "",
-      });
-
-      setPreviewUrls({
-        overviewImage: service.overviewImage || null,
-        receiveImage: service.receiveImage || null,
-        whomImage: service.whomImage || null,
-        icon: service.icon || null,
-      });
-
-      // Clear file states
-      setFileStates({
-        overviewImage: null,
-        receiveImage: null,
-        whomImage: null,
-        icon: null,
-      });
-
-      // Clear file inputs
-      const fileInputs = ['overviewImage', 'receiveImage', 'whomImage', 'icon'];
-      fileInputs.forEach((field) => {
-        const input = document.getElementById(field) as HTMLInputElement;
-        if (input) input.value = "";
-      });
-
-      setIsModified(false);
-    }
-  };
-
   const FileUpload = ({
     field,
     label,
@@ -451,7 +413,7 @@ const ServiceEdit = () => {
               src={previewUrls[field]!}
               alt={`${label} preview`}
               fill
-              className="object-cover rounded-md"
+              className="object-cover rounded-md w-full"
               unoptimized={previewUrls[field]?.startsWith("blob:")}
             />
           </div>
@@ -513,22 +475,8 @@ const ServiceEdit = () => {
                 <p className="text-sm text-gray-500">
                   Dashboard &gt; Services &gt; Edit &gt; {serviceResponse.data.title}
                 </p>
-                {isModified && (
-                  <p className="text-sm text-orange-600 mt-1">
-                    * You have unsaved changes
-                  </p>
-                )}
               </div>
               <div className="flex gap-2">
-                <Button
-                  type="button"
-                  onClick={resetForm}
-                  variant="outline"
-                  disabled={!isModified || updateMutation.isPending}
-                  className="border-[#A8C2A3] text-[#A8C2A3] hover:bg-[#A8C2A3] hover:text-white"
-                >
-                  Reset
-                </Button>
                 <Button
                   type="submit"
                   disabled={!isModified || updateMutation.isPending}

@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,108 +12,38 @@ import ImageComponent from "next/image";
 import { useSession } from "next-auth/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+// import { useRouter } from "next/navigation";
+
+type FormDataType = {
+  title: string;
+  description: string;
+  price: string;
+  overview: string;
+  overviewImage: File | null;
+  receive: string;
+  receiveImage: File | null;
+  whom: string;
+  whomImage: File | null;
+  icon: File | null;
+};
 
 const ServiceAdd = () => {
   const session = useSession();
   const TOKEN = session?.data?.accessToken;
   const queryClient = useQueryClient();
-  type FormDataType = {
-    title: string;
-    description: string;
-    price: string;
-    overview: string;
-    overviewImage: File | null;
-    receive: string;
-    receiveImage: File | null;
-    whom: string;
-    whomImage: File | null;
-    icon: File | null;
-  };
+  // const router = useRouter();
 
-  const addService = useMutation({
-    mutationFn: async (formData: FormDataType) => {
-      // Create FormData object for file uploads
-      const formDataToSend = new FormData();
-
-      // Append text fields
-      formDataToSend.append("title", formData.title);
-      formDataToSend.append("description", formData.description);
-      formDataToSend.append("price", formData.price);
-      formDataToSend.append("overview", formData.overview);
-      formDataToSend.append("receive", formData.receive);
-      formDataToSend.append("whom", formData.whom);
-
-      // Append file fields (only if files exist)
-      if (formData.overviewImage) {
-        formDataToSend.append("overviewImage", formData.overviewImage);
-      }
-      if (formData.receiveImage) {
-        formDataToSend.append("receiveImage", formData.receiveImage);
-      }
-      if (formData.whomImage) {
-        formDataToSend.append("whomImage", formData.whomImage);
-      }
-      if (formData.icon) {
-        formDataToSend.append("icon", formData.icon);
-      }
-
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/service`,
-        {
-          method: "POST",
-          headers: {
-            // Don't set Content-Type for FormData, let browser set it automatically
-            Authorization: `Bearer ${TOKEN}`,
-          },
-          body: formDataToSend,
-        }
-      );
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || "Something went wrong");
-      }
-
-      return res.json();
-    },
-    onSuccess: (data) => {
-      console.log("Service added successfully:", data);
-      toast.success(data.message);
-      queryClient.invalidateQueries({
-        queryKey: ["services"],
-      });
-      Object.values(previewUrls).forEach((url) => {
-        if (url) {
-          URL.revokeObjectURL(url);
-        }
-      });
-
-      // Reset form after successful submission
-      setFormData({
-        title: "",
-        description: "",
-        price: "",
-        overview: "",
-        overviewImage: null,
-        receive: "",
-        receiveImage: null,
-        whom: "",
-        whomImage: null,
-        icon: null,
-      });
-
-      // Clear preview URLs
-      setPreviewUrls({
-        overviewImage: null,
-        receiveImage: null,
-        whomImage: null,
-        icon: null,
-      });
-    },
-    onError: (error) => {
-      console.error("Error adding service:", error);
-      alert(`Error: ${error.message}`);
-    },
+  // File input refs for clearing
+  const fileInputRefs = useRef<{
+    overviewImage: HTMLInputElement | null;
+    receiveImage: HTMLInputElement | null;
+    whomImage: HTMLInputElement | null;
+    icon: HTMLInputElement | null;
+  }>({
+    overviewImage: null,
+    receiveImage: null,
+    whomImage: null,
+    icon: null,
   });
 
   const [formData, setFormData] = useState<FormDataType>({
@@ -152,6 +82,90 @@ const ServiceAdd = () => {
     };
   }, []);
 
+  const addService = useMutation({
+    mutationFn: async (formData: FormDataType) => {
+      const formDataToSend = new FormData();
+
+      // Append text fields
+      formDataToSend.append("title", formData.title);
+      formDataToSend.append("description", formData.description);
+      formDataToSend.append("price", formData.price);
+      formDataToSend.append("overview", formData.overview);
+      formDataToSend.append("receive", formData.receive);
+      formDataToSend.append("whom", formData.whom);
+
+      // Append file fields (only if files exist)
+      if (formData.overviewImage) {
+        formDataToSend.append("overviewImage", formData.overviewImage);
+      }
+      if (formData.receiveImage) {
+        formDataToSend.append("receiveImage", formData.receiveImage);
+      }
+      if (formData.whomImage) {
+        formDataToSend.append("whomImage", formData.whomImage);
+      }
+      if (formData.icon) {
+        formDataToSend.append("icon", formData.icon);
+      }
+
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/service`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${TOKEN}`,
+          },
+          body: formDataToSend,
+        }
+      );
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Something went wrong");
+      }
+
+      return res.json();
+    },
+    onSuccess: (data) => {
+      toast.success(data.message);
+      queryClient.invalidateQueries({
+        queryKey: ["services"],
+      });
+      window.location.href = "/services"
+      
+      // Cleanup URLs
+      Object.values(previewUrls).forEach((url) => {
+        if (url) {
+          URL.revokeObjectURL(url);
+        }
+      });
+
+      // Reset form
+      setFormData({
+        title: "",
+        description: "",
+        price: "",
+        overview: "",
+        overviewImage: null,
+        receive: "",
+        receiveImage: null,
+        whom: "",
+        whomImage: null,
+        icon: null,
+      });
+
+      setPreviewUrls({
+        overviewImage: null,
+        receiveImage: null,
+        whomImage: null,
+        icon: null,
+      });
+    },
+    onError: (error) => {
+      toast.error(`Error: ${error.message}`);
+    },
+  });
+
   const handleInputChange = (field: keyof FormDataType, value: string) => {
     setFormData((prev) => ({
       ...prev,
@@ -162,13 +176,13 @@ const ServiceAdd = () => {
   const handleFileChange = (field: keyof FormDataType, file: File) => {
     // Validate file type
     if (!file.type.startsWith("image/")) {
-      alert("Please select an image file");
+      toast.error("Please select an image file");
       return;
     }
 
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      toast("File size must be less than 5MB");
+      toast.error("File size must be less than 5MB");
       return;
     }
 
@@ -178,12 +192,15 @@ const ServiceAdd = () => {
       URL.revokeObjectURL(previewUrls[urlField]!);
     }
 
+    // Create new URL
+    const url = URL.createObjectURL(file);
+
+    // Update state immediately
     setFormData((prev) => ({
       ...prev,
       [field]: file,
     }));
 
-    const url = URL.createObjectURL(file);
     setPreviewUrls((prev) => ({
       ...prev,
       [field]: url,
@@ -197,19 +214,20 @@ const ServiceAdd = () => {
       URL.revokeObjectURL(previewUrls[urlField]!);
     }
 
+    // Update state immediately
     setFormData((prev) => ({
       ...prev,
       [field]: null,
     }));
+    
     setPreviewUrls((prev) => ({
       ...prev,
       [field]: null,
     }));
 
-    // Clear the file input
-    const fileInput = document.getElementById(field) as HTMLInputElement;
-    if (fileInput) {
-      fileInput.value = "";
+    // Clear the file input using ref
+    if (fileInputRefs.current[urlField]) {
+      fileInputRefs.current[urlField]!.value = "";
     }
   };
 
@@ -233,46 +251,6 @@ const ServiceAdd = () => {
       toast.error("Please enter a valid price");
       return;
     }
-
-    // Log form data for debugging
-    console.log("Form Data before submission:", {
-      title: formData.title,
-      description: formData.description,
-      price: formData.price,
-      overview: formData.overview,
-      receive: formData.receive,
-      whom: formData.whom,
-      files: {
-        overviewImage: formData.overviewImage
-          ? {
-              name: formData.overviewImage.name,
-              size: formData.overviewImage.size,
-              type: formData.overviewImage.type,
-            }
-          : null,
-        receiveImage: formData.receiveImage
-          ? {
-              name: formData.receiveImage.name,
-              size: formData.receiveImage.size,
-              type: formData.receiveImage.type,
-            }
-          : null,
-        whomImage: formData.whomImage
-          ? {
-              name: formData.whomImage.name,
-              size: formData.whomImage.size,
-              type: formData.whomImage.type,
-            }
-          : null,
-        icon: formData.icon
-          ? {
-              name: formData.icon.name,
-              size: formData.icon.size,
-              type: formData.icon.type,
-            }
-          : null,
-      },
-    });
 
     // Submit the form
     addService.mutate(formData);
@@ -301,6 +279,9 @@ const ServiceAdd = () => {
       </Label>
       <div className="relative">
         <Input
+          ref={(el) => {
+            fileInputRefs.current[field] = el;
+          }}
           id={field}
           type="file"
           accept={accept}
@@ -343,12 +324,6 @@ const ServiceAdd = () => {
                     fill
                     className="object-cover"
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                    onError={(e) => {
-                      console.error(`Error loading image for ${field}:`, e);
-                      // Fallback: show a placeholder or error message
-                      const target = e.target as HTMLImageElement;
-                      target.style.display = "none";
-                    }}
                   />
                 </div>
               </div>
@@ -385,7 +360,7 @@ const ServiceAdd = () => {
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="title" className="font-semibold">
+                  <Label htmlFor="title" className="font-semibold text-base">
                     Title
                   </Label>
                   <Input
@@ -398,7 +373,7 @@ const ServiceAdd = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="price" className="font-semibold">
+                  <Label htmlFor="price" className="font-semibold text-base">
                     Price
                   </Label>
                   <Input
@@ -412,7 +387,7 @@ const ServiceAdd = () => {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="description" className="font-semibold">
+                <Label htmlFor="description" className="font-semibold text-base">
                   Description
                 </Label>
                 <Textarea
@@ -432,7 +407,7 @@ const ServiceAdd = () => {
             <div className="space-y-6">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <div className="space-y-2">
-                  <Label htmlFor="overview" className="font-semibold">
+                  <Label htmlFor="overview" className="font-semibold text-base">
                     Overview Text
                   </Label>
                   <Textarea
@@ -458,7 +433,7 @@ const ServiceAdd = () => {
             <div className="space-y-6">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <div className="space-y-2">
-                  <Label htmlFor="receive" className="font-semibold">
+                  <Label htmlFor="receive" className="font-semibold text-base">
                     Receive Details
                   </Label>
                   <Textarea
@@ -484,7 +459,7 @@ const ServiceAdd = () => {
             <div className="space-y-6">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <div className="space-y-2">
-                  <Label htmlFor="whom" className="font-semibold">
+                  <Label htmlFor="whom" className="font-semibold text-base">
                     For Whom
                   </Label>
                   <Textarea

@@ -14,7 +14,7 @@ import {
   Cell,
 } from "recharts";
 import Image from "next/image";
-import { SquareArrowOutUpRight } from "lucide-react";
+// import { SquareArrowOutUpRight } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useSession } from "next-auth/react";
@@ -572,12 +572,12 @@ export default function Dashboard() {
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg">Product Sell</CardTitle>
                 <Link href="/resource-list">
-                  <Button className="text-[#3B82F6]" variant="link" size="sm">
+                  {/* <Button className="text-[#3B82F6]" variant="link" size="sm">
                     View Details
                     <span>
                       <SquareArrowOutUpRight />
                     </span>
-                  </Button>
+                  </Button> */}
                 </Link>
               </div>
             </CardHeader>

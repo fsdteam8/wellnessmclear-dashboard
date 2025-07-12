@@ -147,7 +147,7 @@ export default function CategoriesPage() {
   return (
     <div className="flex h-screen">
       <div className="flex-1 overflow-auto">
-        <div className="p-6 bg-[#EDEEF1]">
+        <div className="p-6">
           <div className="mb-10">
             <PageHeader
               onButtonClick={handleAddCategory}
@@ -160,7 +160,7 @@ export default function CategoriesPage() {
           </div>
 
           {isLoading ? (
-            <div className="flex h-[60vh] items-center justify-center bg-gray-50">
+            <div className="flex h-[60vh] items-center justify-center">
               <div className="text-center">
                 <PuffLoader
                   color="rgba(49, 23, 215, 1)"

@@ -1,12 +1,12 @@
-import React from 'react'
-import ServiceEdit from './_components/ServiceEdit'
+import React from "react";
+import ServiceEdit from "./_components/ServiceEdit";
 
 function page() {
   return (
     <div>
-<ServiceEdit />      
+      <ServiceEdit />
     </div>
-  )
+  );
 }
 
-export default page
+export default page;

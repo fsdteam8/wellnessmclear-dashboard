@@ -51,13 +51,16 @@ export default function CategoryAdd() {
         body.append("categoryImage", data.categoryImage);
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/category/`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body,
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/category/`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body,
+        }
+      );
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -77,19 +80,22 @@ export default function CategoryAdd() {
 
   const addTag = () => {
     const trimmed = tagInput.trim();
-    if (trimmed && !formData.subCategories.some(tag => tag.name === trimmed)) {
-      setFormData(prev => ({
+    if (
+      trimmed &&
+      !formData.subCategories.some((tag) => tag.name === trimmed)
+    ) {
+      setFormData((prev) => ({
         ...prev,
-        subCategories: [...prev.subCategories, { name: trimmed }]
+        subCategories: [...prev.subCategories, { name: trimmed }],
       }));
       setTagInput("");
     }
   };
 
   const removeTag = (index: number) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      subCategories: prev.subCategories.filter((_, i) => i !== index)
+      subCategories: prev.subCategories.filter((_, i) => i !== index),
     }));
   };
 
@@ -107,7 +113,7 @@ export default function CategoryAdd() {
         return;
       }
 
-      setFormData(prev => ({ ...prev, categoryImage: file }));
+      setFormData((prev) => ({ ...prev, categoryImage: file }));
 
       const reader = new FileReader();
       reader.onload = (event) => {
@@ -118,7 +124,7 @@ export default function CategoryAdd() {
   };
 
   const removeImage = () => {
-    setFormData(prev => ({ ...prev, categoryImage: null }));
+    setFormData((prev) => ({ ...prev, categoryImage: null }));
     setImagePreview(null);
   };
 
@@ -140,18 +146,18 @@ export default function CategoryAdd() {
         </div>
 
         <form onSubmit={handleSubmit} className="pt-10 space-y-6">
-          <h2 className="text-lg font-semibold mb-4">General Information</h2>
-
           <div className="flex flex-col lg:flex-row gap-10">
             {/* Left Side */}
-            <div className="flex-1 space-y-6">
+            <div className="flex-1 space-y-20">
               <div>
                 <Label htmlFor="name">Category Name</Label>
                 <Input
                   id="name"
                   placeholder="Type category name here..."
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
                   className="mt-3 h-[50px] border border-[#707070]"
                 />
               </div>
@@ -192,12 +198,11 @@ export default function CategoryAdd() {
                 </div>
               </div>
             </div>
-
             {/* Right Side */}
             <div className="w-full lg:w-1/3">
               <Label htmlFor="image">Category Image</Label>
               <div className="mt-3 space-y-4">
-                <div className="flex items-center gap-4 w-full">
+                <div className="flex items-center gap-4">
                   <Input
                     id="image"
                     type="file"
@@ -207,20 +212,21 @@ export default function CategoryAdd() {
                   />
                   <Label
                     htmlFor="image"
-                    className="flex items-center gap-2 px-4 py-2 border border-[#707070] rounded-md cursor-pointer hover:bg-gray-50 w-full"
+                    className="flex items-center gap-2 px-4 py-2 border border-[#707070] rounded-md cursor-pointer hover:bg-gray-50 w-[300px]"
                   >
                     <Upload size={16} />
                     Choose Image
-                  </Label>
-                  {formData.categoryImage && (
+                    {formData.categoryImage && (
                     <span className="text-sm text-gray-600 truncate max-w-[120px]">
                       {formData.categoryImage.name}
                     </span>
                   )}
+                  </Label>
+                  
                 </div>
 
                 {imagePreview && (
-                  <div className="relative w-full inline-block mt-4">
+                  <div className="relative w-[300px] mt-4">
                     <Image
                       src={imagePreview}
                       alt="Preview"
@@ -231,9 +237,9 @@ export default function CategoryAdd() {
                     <button
                       type="button"
                       onClick={removeImage}
-                      className="absolute -top-2 -right-[150px] bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
                     >
-                      <X size={14} />
+                      <X size={16} />
                     </button>
                   </div>
                 )}
@@ -241,7 +247,7 @@ export default function CategoryAdd() {
             </div>
           </div>
 
-          <div className="flex justify-end pt-4">
+          <div className="flex justify-start pt-4">
             <Button
               type="submit"
               disabled={mutation.isPending || status !== "authenticated"}

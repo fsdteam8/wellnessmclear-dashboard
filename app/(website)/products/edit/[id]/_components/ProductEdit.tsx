@@ -1,21 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  Upload,
-  DollarSign,
-  Tag,
-  Box,
-  Building,
-  Loader2,
-  CheckCircle,
-  AlertCircle,
-} from "lucide-react";
+import { Upload, Loader2, CheckCircle, AlertCircle, X } from "lucide-react";
 import Image from "next/image";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 import { useParams } from "next/navigation";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useRouter } from "next/navigation";
 
 interface FormData {
   name: string;
@@ -25,7 +20,7 @@ interface FormData {
   savedPrice: string;
   image: File | null;
   category: string;
-  subCategory: string;
+  subCategory: string[];
   brand: string;
   countInStock: string;
 }
@@ -50,7 +45,7 @@ interface Product {
   savedPrice: number;
   image: string;
   category: string;
-  subCategory: string;
+  subCategory: string | string[];
   brand: string;
   countInStock: number;
   createdAt: string;
@@ -76,7 +71,7 @@ const ProductEditForm: React.FC = () => {
     savedPrice: "",
     image: null,
     category: "",
-    subCategory: "",
+    subCategory: [],
     brand: "",
     countInStock: "",
   });
@@ -87,6 +82,7 @@ const ProductEditForm: React.FC = () => {
     type: "success" | "error" | null;
     message: string;
   }>({ type: null, message: "" });
+  const [tagInput, setTagInput] = useState("");
 
   const session = useSession();
   const token = session?.data?.accessToken;
@@ -94,6 +90,7 @@ const ProductEditForm: React.FC = () => {
   const params = useParams();
   const id = params?.id;
 
+  const router = useRouter()
   // Fetch single product
   const {
     data: productData,
@@ -151,6 +148,23 @@ const ProductEditForm: React.FC = () => {
   useEffect(() => {
     if (productData?.data?.product) {
       const product = productData.data.product;
+
+      // Handle subcategory - it might be string or array
+      let subCategoryArray: string[] = [];
+      if (Array.isArray(product.subCategory)) {
+        subCategoryArray = product.subCategory;
+      } else if (typeof product.subCategory === "string") {
+        // If it's a string, try to parse as JSON first, then split by comma
+        try {
+          subCategoryArray = JSON.parse(product.subCategory);
+        } catch {
+          subCategoryArray = product.subCategory
+            .split(",")
+            .map((s) => s.trim())
+            .filter((s) => s);
+        }
+      }
+
       setFormData({
         name: product.name,
         description: product.description,
@@ -159,7 +173,7 @@ const ProductEditForm: React.FC = () => {
         savedPrice: product.savedPrice.toString(),
         image: null,
         category: product.category,
-        subCategory: product.subCategory,
+        subCategory: subCategoryArray,
         brand: product.brand,
         countInStock: product.countInStock.toString(),
       });
@@ -233,6 +247,36 @@ const ProductEditForm: React.FC = () => {
     if (fileInput) fileInput.value = "";
   };
 
+  // Tag field handlers
+  const addTag = (tag: string) => {
+    const trimmedTag = tag.trim();
+    if (trimmedTag && !formData.subCategory.includes(trimmedTag)) {
+      setFormData((prev) => ({
+        ...prev,
+        subCategory: [...prev.subCategory, trimmedTag],
+      }));
+    }
+  };
+
+  const removeTag = (tagToRemove: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      subCategory: prev.subCategory.filter((tag) => tag !== tagToRemove),
+    }));
+  };
+
+  const handleTagInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      addTag(tagInput);
+      setTagInput("");
+    }
+  };
+
+  const handleTagInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setTagInput(e.target.value);
+  };
+
   const validateForm = () => {
     const requiredFields = [
       "name",
@@ -240,7 +284,6 @@ const ProductEditForm: React.FC = () => {
       "actualPrice",
       "discountedPrice",
       "category",
-      "subCategory",
       "brand",
       "countInStock",
     ];
@@ -250,6 +293,11 @@ const ProductEditForm: React.FC = () => {
         toast.error(`Please fill in the ${field.replace(/([A-Z])/g, " $1")}`);
         return false;
       }
+    }
+
+    if (formData.subCategory.length === 0) {
+      toast.error("Please add at least one subcategory");
+      return false;
     }
 
     const actualPrice = parseFloat(formData.actualPrice);
@@ -289,7 +337,10 @@ const ProductEditForm: React.FC = () => {
       formDataToSend.append("discountedPrice", productData.discountedPrice);
       formDataToSend.append("savedPrice", productData.savedPrice);
       formDataToSend.append("category", productData.category);
-      formDataToSend.append("subCategory", productData.subCategory);
+      formDataToSend.append(
+        "subCategory",
+        JSON.stringify(productData.subCategory)
+      );
       formDataToSend.append("brand", productData.brand);
       formDataToSend.append("countInStock", productData.countInStock);
 
@@ -318,6 +369,7 @@ const ProductEditForm: React.FC = () => {
     },
     onSuccess: (response) => {
       toast.success(response.message || "Product updated successfully!");
+      router.push("/products")
       setSubmitStatus({
         type: "success",
         message: response.message || "Product updated successfully!",
@@ -366,7 +418,8 @@ const ProductEditForm: React.FC = () => {
             Product Not Found
           </h2>
           <p className="text-gray-500 mb-4">
-            The product youre looking for doesnt exist or has been deleted.
+            The product you&apos;re looking for doesn&apos;t exist or has been
+            deleted.
           </p>
         </div>
       </div>
@@ -378,13 +431,38 @@ const ProductEditForm: React.FC = () => {
   return (
     <div className="min-h-screen bg-white p-8">
       <div className="">
-        <div className="mb-6">
-          <div className="flex items-center gap-4 mb-2">
-            <h1 className="text-2xl font-semibold text-gray-900">
-              Edit Product
-            </h1>
+        <div className="flex justify-between items-center">
+          <div className="mb-6">
+            <div className="flex items-center gap-4 mb-2">
+              <h1 className="text-2xl font-semibold text-gray-900">
+                Edit Product
+              </h1>
+            </div>
+            <p className="text-gray-500">Dashboard &gt; Product &gt; Edit</p>
           </div>
-          <p className="text-gray-500">Dashboard &gt; Product &gt; Edit</p>
+
+          <div className="flex justify-end">
+            <button
+              onClick={handleSubmit}
+              disabled={updateProductMutation.isPending || !token}
+              className="bg-[#A8C2A3] hover:bg-[#5b7756] text-white px-6 py-2 rounded-lg font-semibold shadow-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              {updateProductMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Updating...
+                </>
+              ) : (
+                "Update Product"
+              )}
+            </button>
+
+            {!token && (
+              <p className="text-sm text-red-500 mt-2 ml-4">
+                Please log in to update the product
+              </p>
+            )}
+          </div>
         </div>
 
         {/* Status Messages */}
@@ -409,9 +487,8 @@ const ProductEditForm: React.FC = () => {
           {/* LEFT SIDE */}
           <div className="space-y-6">
             <div>
-              <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                <Tag className="h-4 w-4" />
-                Product Name *
+              <label className="flex items-center gap-2 text-base font-semibold text-gray-700 mb-2">
+                Product Name
               </label>
               <input
                 type="text"
@@ -425,9 +502,8 @@ const ProductEditForm: React.FC = () => {
             </div>
 
             <div>
-              <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                <Box className="h-4 w-4" />
-                Description *
+              <label className="flex items-center gap-2 text-base font-semibold text-gray-700 mb-2">
+                Description
               </label>
               <textarea
                 name="description"
@@ -440,15 +516,11 @@ const ProductEditForm: React.FC = () => {
               />
             </div>
 
-            <div className="bg-gray-50 p-6 rounded-lg">
-              <h3 className="flex items-center gap-2 text-lg font-semibold mb-4">
-                <DollarSign className="h-5 w-5" />
-                Pricing
-              </h3>
+            <div className="">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium mb-2 block">
-                    Actual Price *
+                  <label className="text-base font-medium mb-2 block">
+                    Actual Price
                   </label>
                   <input
                     type="number"
@@ -463,8 +535,8 @@ const ProductEditForm: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium mb-2 block">
-                    Discounted Price *
+                  <label className="text-base font-medium mb-2 block">
+                    Discounted Price
                   </label>
                   <input
                     type="number"
@@ -479,7 +551,7 @@ const ProductEditForm: React.FC = () => {
                 </div>
 
                 <div className="sm:col-span-2">
-                  <label className="text-sm font-medium mb-2 block">
+                  <label className="text-base font-medium mb-2 block">
                     Saved Price (Auto-calculated)
                   </label>
                   <input
@@ -487,7 +559,7 @@ const ProductEditForm: React.FC = () => {
                     step="0.01"
                     name="savedPrice"
                     value={formData.savedPrice}
-                    className="w-full px-4 py-3 border rounded-lg bg-gray-100"
+                    className="w-full px-4 py-3 border rounded-lg"
                     readOnly
                   />
                 </div>
@@ -496,7 +568,7 @@ const ProductEditForm: React.FC = () => {
           </div>
 
           {/* RIGHT SIDE */}
-          <div className="space-y-6">
+          <div className="space-y-10">
             <div>
               <label className="text-sm font-semibold text-gray-700 mb-2 block">
                 Product Image
@@ -549,15 +621,14 @@ const ProductEditForm: React.FC = () => {
             </div>
 
             <div>
-              <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                <Building className="h-4 w-4" />
-                Category *
+              <label className="flex items-center gap-2 text-base font-semibold text-gray-700 mb-2">
+                Category
               </label>
               <select
                 name="category"
                 value={formData.category}
                 onChange={handleInputChange}
-                className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 bg-white border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 disabled={updateProductMutation.isPending || categoriesLoading}
               >
                 <option value="">
@@ -573,24 +644,44 @@ const ProductEditForm: React.FC = () => {
               </select>
             </div>
 
+            {/* ShadCN Tag Field for Sub Category */}
             <div>
-              <label className="text-sm font-semibold text-gray-700 mb-2 block">
-                Sub Category *
-              </label>
-              <input
-                type="text"
-                name="subCategory"
-                value={formData.subCategory}
-                onChange={handleInputChange}
-                placeholder="Sub Category"
-                className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                disabled={updateProductMutation.isPending}
-              />
+              <Label className="flex items-center gap-2 text-base font-semibold text-gray-700 mb-2">
+                Sub Category
+              </Label>
+              <div className="space-y-2">
+                <Input
+                  value={tagInput}
+                  onChange={handleTagInputChange}
+                  onKeyDown={handleTagInputKeyDown}
+                  placeholder="Type and press Enter or comma to add subcategory"
+                  className="w-full h-[49px] rounded-lg"
+                  disabled={updateProductMutation.isPending}
+                />
+                <div className="flex flex-wrap gap-2">
+                  {formData.subCategory.map((tag, index) => (
+                    <Badge
+                      key={index}
+                      variant="secondary"
+                      className="flex items-center gap-1"
+                    >
+                      {tag}
+                      <button
+                        onClick={() => removeTag(tag)}
+                        className="ml-1 hover:bg-gray-300 rounded-full p-0.5"
+                        disabled={updateProductMutation.isPending}
+                      >
+                        <X size={12} />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              </div>
             </div>
 
             <div>
-              <label className="text-sm font-semibold text-gray-700 mb-2 block">
-                Brand *
+              <label className="text-base font-semibold text-gray-700 mb-2 block">
+                Brand
               </label>
               <input
                 type="text"
@@ -604,8 +695,8 @@ const ProductEditForm: React.FC = () => {
             </div>
 
             <div>
-              <label className="text-sm font-semibold text-gray-700 mb-2 block">
-                Stock Count *
+              <label className="text-base font-semibold text-gray-700 mb-2 block">
+                Stock Count
               </label>
               <input
                 type="number"
@@ -619,30 +710,6 @@ const ProductEditForm: React.FC = () => {
               />
             </div>
           </div>
-        </div>
-
-        {/* Submit Button */}
-        <div className="mt-8 flex justify-end">
-          <button
-            onClick={handleSubmit}
-            disabled={updateProductMutation.isPending || !token}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold shadow-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-          >
-            {updateProductMutation.isPending ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Updating...
-              </>
-            ) : (
-              "Update Product"
-            )}
-          </button>
-
-          {!token && (
-            <p className="text-sm text-red-500 mt-2 ml-4">
-              Please log in to update the product
-            </p>
-          )}
         </div>
       </div>
     </div>

@@ -199,7 +199,7 @@ export default function OrderHistoryPage() {
   };
 
   const getProductNames = (products: ProductItem[]) => {
-    return products.map((item) => item.product.name).join(", ");
+    return products.map((item) => item.product?.name).join(", ");
   };
 
   if (error) {
@@ -268,7 +268,7 @@ export default function OrderHistoryPage() {
                       {payment._id.slice(-8)}
                     </td>
                     <td className="p-4 text-gray-900 max-w-xs truncate">
-                      {getProductNames(payment.product)}
+                      {getProductNames(payment?.product)}
                     </td>
                     <td className="p-4 text-gray-900 font-semibold">
                       ${payment.amount.toFixed(2)}
@@ -407,8 +407,8 @@ export default function OrderHistoryPage() {
                   <div className="flex items-start space-x-4">
                     <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-200 flex-shrink-0">
                       <Image
-                        src={item.product.image}
-                        alt={item.product.name}
+                        src={item?.product?.image}
+                        alt={item?.product?.name}
                         width={64}
                         height={64}
                         className="object-cover w-full h-full"
@@ -416,10 +416,10 @@ export default function OrderHistoryPage() {
                     </div>
                     <div className="flex-1">
                       <h4 className="font-medium text-gray-900">
-                        {item.product.name}
+                        {item?.product?.name}
                       </h4>
                       <p className="text-sm text-gray-600 mt-1">
-                        {item.product.description}
+                        {item?.product?.description}
                       </p>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-3 text-sm">
                         <div>
@@ -429,7 +429,7 @@ export default function OrderHistoryPage() {
                         <div>
                           <p className="text-gray-600">Price</p>
                           <p className="font-medium">
-                            ${item.product.discountedPrice.toFixed(2)}
+                            ${item?.product?.discountedPrice.toFixed(2)}
                           </p>
                         </div>
                         <div>
@@ -437,13 +437,13 @@ export default function OrderHistoryPage() {
                           <p className="font-medium">
                             $
                             {(
-                              item.product.discountedPrice * item.quantity
+                              item?.product?.discountedPrice * item.quantity
                             ).toFixed(2)}
                           </p>
                         </div>
                         <div>
                           <p className="text-gray-600">Brand</p>
-                          <p className="font-medium">{item.product.brand}</p>
+                          <p className="font-medium">{item?.product?.brand}</p>
                         </div>
                       </div>
                     </div>

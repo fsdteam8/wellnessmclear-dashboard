@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Breadcrumb } from "@/components/breadcrumb"
 import { PageHeader } from "@/components/page-header"
 import { DataTable } from "@/components/data-table"
 import Image from "next/image"
@@ -108,11 +107,6 @@ const columns: BlogColumn[] = [
       return ""
     },
   },
-  {
-    key: "comments",
-    label: "Comments",
-    render: () => "0",
-  },
 ]
 
 export default function BlogManagementPage() {
@@ -214,11 +208,11 @@ export default function BlogManagementPage() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <div className="flex-1 overflow-auto">
+    <div className="flex bg-gray-50">
+      <div className="w-full">
         <div className="p-6">
           <PageHeader title="Blog management" buttonText="Add blog" onButtonClick={handleAddBlog} />
-          <Breadcrumb items={[{ label: "Dashboard", href: "/" }, { label: "Blog management" }]} />
+          <p className="text-gray-500 -mt-5 mb-10" >Dashboard &gt; Blog management</p>
 
           {isLoading ? (
             <div className="space-y-4">

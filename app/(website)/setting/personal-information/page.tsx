@@ -6,7 +6,13 @@ import Image from "next/image";
 // import { AccountLayout } from "@/components/account/account-layout"
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { SquareArrowOutUpRight, Camera, Trash2, Loader2 } from "lucide-react";
+import {
+  SquareArrowOutUpRight,
+  Camera,
+  Trash2,
+  Loader2,
+  ArrowLeft,
+} from "lucide-react";
 // import LegalDoc from "@/components/HomePage/LegalDoc"
 import { useSession } from "next-auth/react";
 
@@ -384,7 +390,7 @@ export default function ProfilePage() {
       formData.road,
       formData.city,
       formData.country,
-      formData.postalCode
+      formData.postalCode,
     ].filter(Boolean);
     return parts.length > 0 ? parts.join(", ") : "Address not provided";
   };
@@ -488,18 +494,23 @@ export default function ProfilePage() {
                 @{formData.firstName.toLowerCase()}
                 {formData.lastName.toLowerCase()}
               </p>
-              <p className="text-gray-700">
-                {getDisplayAddress()}
-              </p>
-              <Button
+              <p className="text-gray-700">{getDisplayAddress()}</p>
+              {/* <Button
                 className="mt-4 bg-[#2c5d7c] hover:bg-[#1e4258]"
                 onClick={() => (window.location.href = "/dashboard")}
                 disabled={isAnyOperationPending}
               >
                 <SquareArrowOutUpRight className="mr-2" />
                 Go To Dashboard
-              </Button>
+              </Button> */}
             </div>
+            <button
+              onClick={() => window.history.back()}
+              className="inline-flex items-center px-4 py-2 text-sm font-medium text-[#4D6B57] border border-[#A8C2A3] rounded-xl hover:bg-[#42693a] hover:text-white transition-all duration-200 shadow-sm"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back
+            </button>
           </div>
 
           <div className="bg-[#6459490D] p-6 rounded-[12px] relative">
@@ -511,7 +522,7 @@ export default function ProfilePage() {
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-xl font-bold">Personal Information</h3>
               <Button
-                className="bg-[#2c5d7c] hover:bg-[#1e4258] disabled:opacity-50"
+                className="bg-[#42693a] hover:bg-[#7ca075] disabled:opacity-50"
                 onClick={isEditing ? handleUpdate : () => setIsEditing(true)}
                 disabled={isAnyOperationPending}
               >

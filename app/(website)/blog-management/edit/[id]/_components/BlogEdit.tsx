@@ -7,17 +7,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Upload, X } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
 import Image from "next/image";
 import dynamic from "next/dynamic";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { PageHeader } from "@/components/page-header";
-import { Breadcrumb } from "@/components/breadcrumb";
 
 // Dynamically import ReactQuill to avoid SSR issues
 const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 import "react-quill/dist/quill.snow.css";
 import { useSession } from "next-auth/react";
+import { toast } from "sonner";
 
 interface Blog {
   _id: string;
@@ -37,7 +36,6 @@ interface BlogResponse {
 export default function BlogEdit() {
   const router = useRouter();
   const params = useParams();
-  const { toast } = useToast();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -163,20 +161,13 @@ export default function BlogEdit() {
       return response.json() as Promise<BlogResponse>;
     },
     onSuccess: (data) => {
-      toast({
-        title: "Success",
-        description: data.message || "Blog updated successfully",
-      });
+      toast.success(data?.message)
       queryClient.invalidateQueries({ queryKey: ["blog"] });
       queryClient.invalidateQueries({ queryKey: ["blog", blogId] });
       router.push("/blog-management");
     },
     onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update blog",
-        variant: "destructive",
-      });
+      toast.error(error?.message)
     },
   });
 
@@ -217,11 +208,7 @@ export default function BlogEdit() {
     if (e) e.preventDefault();
 
     if (!formData.title.trim()) {
-      toast({
-        title: "Error",
-        description: "Blog title is required",
-        variant: "destructive",
-      });
+      toast.error('Blog title is required')
       return;
     }
 
@@ -307,17 +294,12 @@ export default function BlogEdit() {
             buttonText="Update"
             onButtonClick={handleSubmit}
           />
-          <Breadcrumb
-            items={[
-              { label: "Dashboard", href: "/" },
-              { label: "Blog management", href: "/blog-management" },
-              { label: "Edit Blog" },
-            ]}
-          />
+          <p className="text-gray-500 -mt-4" >Dashboard &gt; Blog management</p>
+          
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2">
-              <div className="p-6">
+              <div className="mt-6">
                 <form
                   id="blog-form"
                   onSubmit={handleSubmit}

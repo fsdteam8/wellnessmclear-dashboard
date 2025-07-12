@@ -14,7 +14,7 @@ export function PageHeader({ title, buttonText, onButtonClick }: PageHeaderProps
     <div className="flex items-center justify-between mb-6">
       <h1 className="text-2xl font-semibold text-gray-900">{title}</h1>
       {buttonText && (
-        <Button onClick={onButtonClick} className="bg-[#7bbe6e] hover:bg-[#739e6b]">
+        <Button onClick={onButtonClick} className="bg-[#A8C2A3] hover:bg-[#65815f]">
           <Plus className="h-4 w-4 mr-2" />
           {buttonText}
         </Button>

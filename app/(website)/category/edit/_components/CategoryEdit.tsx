@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+
 "use client";
 
 import type React from "react";
@@ -14,7 +14,7 @@ import { X, Save } from "lucide-react";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
-
+/* eslint-disable @typescript-eslint/no-explicit-any */
 declare module "next-auth" {
   interface Session {
     accessToken: string;
@@ -212,11 +212,10 @@ export default function CategoryEdit() {
         </div>
 
         <form onSubmit={handleSubmit} className="pt-10 space-y-6">
-          <h2 className="text-lg font-semibold mb-4">General Information</h2>
 
           <div className="flex flex-col lg:flex-row gap-10">
             {/* Left Column */}
-            <div className="flex-1 space-y-6">
+            <div className="flex-1 space-y-16">
               {/* Category Name */}
               <div>
                 <Label htmlFor="name">Category Name</Label>

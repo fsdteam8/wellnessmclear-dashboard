@@ -144,7 +144,6 @@ export default function ProductsPage() {
       return product._id;
     },
     onSuccess: () => {
-      // ✅ Invalidate only current page data to trigger refetch
       queryClient.invalidateQueries({ queryKey: ["products-data", currentPage] });
       toast.success("Product deleted successfully!");
     },
@@ -191,7 +190,7 @@ export default function ProductsPage() {
             <PageHeader
               onButtonClick={handleAddProduct}
               title="Products List"
-              buttonText="Add Product"
+              buttonText="Create Product"
             />
             <p className="text-gray-500 -mt-4">
               Dashboard &gt; Products_List
@@ -199,7 +198,7 @@ export default function ProductsPage() {
           </div>
 
           {isLoading ? (
-            <div className="flex h-[60vh] items-center justify-center bg-gray-50">
+            <div className="flex h-[60vh] items-center justify-center">
               <PuffLoader
                 color="rgba(49, 23, 215, 1)"
                 loading

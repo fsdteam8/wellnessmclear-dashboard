@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Upload, Save, X } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
 import Image from "next/image";
 import dynamic from "next/dynamic";
 import { useMutation } from "@tanstack/react-query";
@@ -17,6 +16,7 @@ import { useMutation } from "@tanstack/react-query";
 const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 import "react-quill/dist/quill.snow.css";
 import { useSession } from "next-auth/react";
+import { toast } from "sonner";
 
 interface BlogResponse {
   status: boolean;
@@ -34,7 +34,6 @@ interface BlogResponse {
 
 export default function BlogAdd() {
   const router = useRouter();
-  const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const session = useSession();
@@ -113,18 +112,11 @@ export default function BlogAdd() {
       return response.json() as Promise<BlogResponse>;
     },
     onSuccess: (data) => {
-      toast({
-        title: "Success",
-        description: data.message || "Blog created successfully",
-      });
+      toast.success(data.message);
       router.push("/blog-management");
     },
     onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create blog",
-        variant: "destructive",
-      });
+      toast.error(error.message)
     },
   });
 
@@ -165,11 +157,7 @@ export default function BlogAdd() {
     e.preventDefault();
 
     if (!formData.title.trim()) {
-      toast({
-        title: "Error",
-        description: "Blog title is required",
-        variant: "destructive",
-      });
+      toast.error("Blog title is required")
       return;
     }
 
@@ -216,7 +204,7 @@ export default function BlogAdd() {
               type="submit"
               form="blog-form"
               disabled={createBlogMutation.isPending}
-              className="bg-slate-600 hover:bg-slate-700"
+              className="bg-[#A8C2A3] hover:bg-[#556d50]"
             >
               <Save className="mr-2 h-4 w-4" />
               {createBlogMutation.isPending ? "Saving..." : "Save"}
@@ -225,7 +213,7 @@ export default function BlogAdd() {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2">
-              <div className="p-6">
+              <div className="">
                 <form
                   id="blog-form"
                   onSubmit={handleSubmit}

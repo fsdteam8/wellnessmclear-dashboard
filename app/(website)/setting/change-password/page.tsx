@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar } from "@radix-ui/react-avatar";
 import { AvatarFallback } from "@/components/ui/avatar";
 import { useSession } from "next-auth/react";
+import { ArrowLeft } from "lucide-react";
 
 export default function ChangePasswordPage() {
   const [formData, setFormData] = useState({
@@ -91,13 +92,23 @@ export default function ChangePasswordPage() {
     <div className="flex h-screen bg-[#EDEEF1]">
       <div className="flex-1 overflow-auto">
         <div className="p-6">
-          <div className="mb-6">
-            <h1 className="text-2xl font-semibold text-gray-900">
-              Change Password
-            </h1>
-            <p className="text-gray-500">
-              Dashboard &gt; Setting &gt; Change Password
-            </p>
+          <div className="flex items-center justify-between">
+            <div className="mb-6">
+              <h1 className="text-2xl font-semibold text-gray-900">
+                Change Password
+              </h1>
+              <p className="text-gray-500">
+                Dashboard &gt; Setting &gt; Change Password
+              </p>
+            </div>
+
+            <button
+              onClick={() => window.history.back()}
+              className="inline-flex items-center px-4 py-2 text-sm font-medium text-[#4D6B57] border border-[#A8C2A3] rounded-xl hover:bg-[#42693a] hover:text-white transition-all duration-200 shadow-sm"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back
+            </button>
           </div>
 
           <div className="p-6">
@@ -190,7 +201,7 @@ export default function ChangePasswordPage() {
                   <Button
                     type="submit"
                     disabled={isLoading}
-                    className="bg-[#525773] hover:bg-[#535a80] text-white px-6 py-3 rounded-md"
+                    className="bg-[#42693a] hover:bg-[#81a17b] text-white px-6 py-3 rounded-md"
                   >
                     {isLoading ? "Changing Password..." : "Change Password"}
                   </Button>

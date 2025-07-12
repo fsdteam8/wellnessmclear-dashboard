@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
-  Tag,
   FileText,
  
   LogOut,
@@ -14,17 +13,18 @@ import {
   Users,
   TrendingUp,
   Reply,
+  ChartBarStacked,
+  ShoppingBasket,
   // Bell,
 } from "lucide-react";
 import { Ri24HoursLine } from "react-icons/ri";
-import { BiCategoryAlt } from "react-icons/bi";
 import Image from "next/image";
 import { signOut } from "next-auth/react";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
-  { name: "Category", href: "/category", icon: BiCategoryAlt },
-  { name: "Products", href: "/products", icon: Tag },
+  { name: "Category", href: "/category", icon: ChartBarStacked },
+  { name: "Products", href: "/products", icon: ShoppingBasket },
   { name: "Blog Management", href: "/blog-management", icon: FileText },
   { name: "Services", href: "/services", icon: Ri24HoursLine },
   // { name: "Promo Code", href: "/promo-code", icon: Ticket },
@@ -32,6 +32,7 @@ const navigation = [
   // { name: "Request Resource", href: "/request-resource", icon: FileText },
   // { name: "Message", href: "/message", icon: MessageSquare },
   { name: "Order History", href: "/order-history", icon: TrendingUp },
+   { name: "Revenue from Coaches", href: "/revenue-from-coaches", icon: Reply },
   // {
   //   name: "Revenue from Seller",
   //   href: "/revenue-from-seller",
@@ -43,7 +44,7 @@ const navigation = [
   { name: "My Wallet", href: "/my-wallet", icon: User },
   // { name: "NewsLetter", href: "/news-letter", icon: Mails },
   { name: "Setting", href: "/setting", icon: Settings},
-  { name: "Revenue from Coaches", href: "/revenue-from-coaches", icon: Reply },
+ 
 ];
 
 export function Sidebar() {

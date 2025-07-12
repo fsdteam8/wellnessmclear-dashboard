@@ -15,32 +15,12 @@ import { PuffLoader } from "react-spinners";
 interface ApiResourceRequest {
   _id: string;
   title: string;
-  country: string;
-  states: string[];
-  resourceType: string[];
-  description: string;
   price: number;
   discountPrice: number;
   quantity: number;
   overview: string;
-  file: {
-    url: string | null;
-    type: string | null;
-  };
   whomImage: string;
-  createdBy: {
-    _id: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-    profileImage: string;
-  };
-  status: string;
-  practiceAreas: string[];
-  productId: string;
   createdAt: string;
-  averageRating: number;
-  totalReviews: number;
 }
 
 interface ApiResponse {
@@ -52,34 +32,27 @@ interface ApiResponse {
     totalItems: number;
     itemsPerPage: number;
   };
-  message?: string;
 }
 
 interface ExtendedProduct extends Product {
   originalId: string;
 }
 
-// Fetch resources
+// API Functions
 const fetchResources = async (page = 1, limit = 10): Promise<ApiResponse> => {
   const response = await fetch(
     `${process.env.NEXT_PUBLIC_BACKEND_URL}/service?page=${page}&limit=${limit}`
   );
 
   if (!response.ok) {
-    const errorData = await response
-      .json()
-      .catch(() => ({ message: "Network error" }));
+    const errorData = await response.json().catch(() => ({ message: "Network error" }));
     throw new Error(errorData.message || "Failed to fetch resources");
   }
 
   return response.json();
 };
 
-// Delete resource
-const deleteResource = async (
-  serviceId: string,
-  token: string
-): Promise<void> => {
+const deleteResource = async (serviceId: string, token: string): Promise<void> => {
   const response = await fetch(
     `${process.env.NEXT_PUBLIC_BACKEND_URL}/service/${serviceId}`,
     {
@@ -91,37 +64,31 @@ const deleteResource = async (
     }
   );
 
-  const text = await response.text();
-  const result = text ? JSON.parse(text) : { success: true };
-
-  if (!response.ok || result?.success === false) {
-    throw new Error(result?.message || "Failed to delete resource");
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ message: "Delete failed" }));
+    throw new Error(errorData.message || "Failed to delete resource");
   }
+
+
 };
 
 // Transform API data to table format
-const transformResourceData = (
-  resources: ApiResourceRequest[]
-): ExtendedProduct[] => {
-  return resources.map(
-    (resource: ApiResourceRequest): ExtendedProduct => ({
-      id: Number(resource._id) || 0,
-      originalId: resource._id,
-      name: resource.title,
-      price: `$${resource.price}`,
-      discountPrice: `$${resource.discountPrice}`,
-      quantity: resource.quantity,
-      format: resource.overview,
-      date:
-        new Date(resource.createdAt).toLocaleDateString() +
-        "\n" +
-        new Date(resource.createdAt).toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-      thumbnail: resource.whomImage || "/placeholder.svg?height=40&width=40",
-    })
-  );
+const transformResourceData = (resources: ApiResourceRequest[]): ExtendedProduct[] => {
+  return resources.map((resource) => ({
+    id: Number(resource._id) || 0,
+    originalId: resource._id,
+    name: resource.title,
+    price: `$${resource.price}`,
+    discountPrice: `$${resource.discountPrice}`,
+    quantity: resource.quantity,
+    format: resource.overview,
+    date: new Date(resource.createdAt).toLocaleDateString() + "\n" + 
+          new Date(resource.createdAt).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+    thumbnail: resource.whomImage || "/placeholder.svg?height=40&width=40",
+  }));
 };
 
 // Column definitions
@@ -158,11 +125,12 @@ export default function ResourceListPage() {
   const router = useRouter();
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-  const session = useSession();
+  const { data: session } = useSession();
   const queryClient = useQueryClient();
 
-  const TOKEN = session?.data?.accessToken || "";
+  const TOKEN = session?.accessToken || "";
 
+  // Fetch resources query
   const {
     data: resourcesResponse,
     isLoading,
@@ -174,20 +142,23 @@ export default function ResourceListPage() {
     queryFn: () => fetchResources(currentPage, itemsPerPage),
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
-    refetchOnMount: true,
   });
 
+  // Delete mutation with optimistic updates
   const deleteMutation = useMutation({
     mutationFn: (serviceId: string) => deleteResource(serviceId, TOKEN),
     onMutate: async (deletedId) => {
+      // Cancel any outgoing refetches
       await queryClient.cancelQueries({ queryKey: ["services", currentPage, itemsPerPage] });
 
+      // Snapshot the previous value
       const previousData = queryClient.getQueryData<ApiResponse>([
         "services",
         currentPage,
         itemsPerPage,
       ]);
 
+      // Optimistically update the cache
       queryClient.setQueryData(["services", currentPage, itemsPerPage], (old?: ApiResponse) => {
         if (!old) return old;
         return {
@@ -195,7 +166,7 @@ export default function ResourceListPage() {
           data: old.data.filter((item) => item._id !== deletedId),
           pagination: {
             ...old.pagination,
-            totalItems: old.pagination.totalItems - 1,
+            totalItems: Math.max(0, old.pagination.totalItems - 1),
           },
         };
       });
@@ -203,19 +174,23 @@ export default function ResourceListPage() {
       return { previousData };
     },
     onError: (err, deletedId, context) => {
-      toast.error(`${(err as Error).message || "Failed to delete resource"}`);
+      // Rollback on error
       if (context?.previousData) {
         queryClient.setQueryData(["services", currentPage, itemsPerPage], context.previousData);
       }
+      toast.error(`Failed to delete resource: ${(err as Error).message}`);
     },
     onSuccess: () => {
-      toast.success("Deleted successfully!");
+      window.location.href = "/services"
+      toast.success("Resource deleted successfully!");
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["services", currentPage, itemsPerPage] });
+      // Always refetch after error or success
+      queryClient.invalidateQueries({ queryKey: ["services"] });
     },
   });
 
+  // Event handlers
   const handleAddResource = () => {
     router.push("/services/add");
   };
@@ -232,13 +207,11 @@ export default function ResourceListPage() {
     setCurrentPage(page);
   };
 
-  const tableData = resourcesResponse?.data
-    ? transformResourceData(resourcesResponse.data)
-    : [];
+  // Prepare data for table
+  const tableData = resourcesResponse?.data ? transformResourceData(resourcesResponse.data) : [];
   const pagination = resourcesResponse?.pagination;
 
-  const isEmpty = (arr: ExtendedProduct[]) => !arr || arr.length === 0;
-
+  // Loading state
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 p-6">
@@ -257,6 +230,7 @@ export default function ResourceListPage() {
     );
   }
 
+  // Error state
   if (isError) {
     return (
       <div className="min-h-screen bg-gray-50 p-6">
@@ -270,8 +244,7 @@ export default function ResourceListPage() {
         </div>
         <div className="flex flex-col justify-center items-center h-64 space-y-4">
           <div className="text-lg text-red-600 text-center">
-            Error loading resources:{" "}
-            {error instanceof Error ? error.message : "Unknown error"}
+            Error loading resources: {error instanceof Error ? error.message : "Unknown error"}
           </div>
           <button
             onClick={() => refetch()}
@@ -295,7 +268,7 @@ export default function ResourceListPage() {
         <p className="text-gray-500 -mt-4">Dashboard &gt; Resource List</p>
       </div>
 
-      {isEmpty(tableData) ? (
+      {tableData.length === 0 ? (
         <div className="text-center text-gray-500 mt-20 text-lg">
           No resources found.
         </div>

@@ -102,10 +102,10 @@ export default function OrderHistoryPage() {
     payment.product.forEach((productItem) => {
       transformedData.push({
         id: `${payment._id}-${productItem._id}`,
-        productName: productItem.product.name,
-        image: productItem.product.image,
-        price: productItem.product.discountedPrice,
-        quantity: productItem.quantity,
+        productName: productItem?.product?.name,
+        image: productItem?.product?.image,
+        price: productItem?.product?.discountedPrice,
+        quantity: productItem?.quantity,
         address: "2372 Westheimer Rd. Santa Ana, Illinois 85486",
         date:
           new Date(payment.createdAt).toLocaleDateString("en-US", {
@@ -125,7 +125,7 @@ export default function OrderHistoryPage() {
   });
 
   const filteredData = transformedData.filter((item) =>
-    item.productName.toLowerCase().includes(searchTerm.toLowerCase())
+    item?.productName?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const totalItems = filteredData.length;
@@ -183,9 +183,9 @@ export default function OrderHistoryPage() {
 
   return (
     <div className="min-h-screen p-6">
-      <h1 className="text-2xl font-bold text-gray-900 mb-2">Order History</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-2">My-Wallet</h1>
       <p className="text-gray-600 mb-6">
-        <span className="text-blue-600">Dashboard</span> &gt; Order History
+        <span className="text-blue-600">Dashboard</span> &gt;My-Wallet
       </p>
 
       {/* Revenue Card */}

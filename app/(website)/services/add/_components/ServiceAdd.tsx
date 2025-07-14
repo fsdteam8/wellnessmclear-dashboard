@@ -348,7 +348,7 @@ const ServiceAdd = () => {
             <Button
               onClick={handleSubmit}
               disabled={addService.isPending}
-              className="px-6 py-2 bg-[#A8C2A3] hover:bg-[#96B091] text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-6 py-2 bg-[#76a36c] hover:bg-[#96B091] text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {addService.isPending ? "Publishing..." : "Publish"}
             </Button>

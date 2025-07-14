@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { FileText, Image, Users, Gift, X, Loader2 } from "lucide-react";
 import NextImage from "next/image";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 
@@ -117,7 +117,6 @@ const ServiceEdit = () => {
   const params = useParams();
   const serviceId = params?.id as string;
   const { data: session } = useSession();
-  const router = useRouter();
 
   const [formData, setFormData] = useState({
     title: "",
@@ -165,7 +164,8 @@ const ServiceEdit = () => {
     mutationFn: updateService,
     onSuccess: (data) => {
       // Update the cache with the new data
-      router.push("/services")
+      // router.push("/services")
+      window.location.href = "/services"
       queryClient.setQueryData(["service", serviceId], data);
       // Invalidate and refetch related queries
       queryClient.invalidateQueries({

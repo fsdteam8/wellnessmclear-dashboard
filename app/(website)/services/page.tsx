@@ -218,10 +218,10 @@ export default function ResourceListPage() {
         <div className="mb-10">
           <PageHeader
             onButtonClick={handleAddResource}
-            title="Resource List"
-            buttonText="Add Resource"
+            title="Services List"
+            buttonText="Add Service"
           />
-          <p className="text-gray-500 -mt-4">Dashboard &gt; Resource List</p>
+          <p className="text-gray-500 -mt-4">Dashboard &gt; Services List</p>
         </div>
         <div className="flex items-center justify-center min-h-[60vh]">
           <PuffLoader color="rgba(49, 23, 215, 1)" loading size={60} />
@@ -237,10 +237,10 @@ export default function ResourceListPage() {
         <div className="mb-10">
           <PageHeader
             onButtonClick={handleAddResource}
-            title="Resource List"
-            buttonText="Add Resource"
+            title="Services List"
+            buttonText="Add Service"
           />
-          <p className="text-gray-500 -mt-4">Dashboard &gt; Resource List</p>
+          <p className="text-gray-500 -mt-4">Dashboard &gt; services List</p>
         </div>
         <div className="flex flex-col justify-center items-center h-64 space-y-4">
           <div className="text-lg text-red-600 text-center">
@@ -262,10 +262,10 @@ export default function ResourceListPage() {
       <div className="mb-10">
         <PageHeader
           onButtonClick={handleAddResource}
-          title="Resource List"
-          buttonText="Add Resource"
+          title="Services List"
+          buttonText="Add Service"
         />
-        <p className="text-gray-500 -mt-4">Dashboard &gt; Resource List</p>
+        <p className="text-gray-500 -mt-4">Dashboard &gt; Services List</p>
       </div>
 
       {tableData.length === 0 ? (

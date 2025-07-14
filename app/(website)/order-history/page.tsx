@@ -257,10 +257,12 @@ export default function OrderHistoryPage() {
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-8">
-                    <PuffLoader color="rgba(49, 23, 215, 1)" size={60} />
-                  </td>
-                </tr>
+  <td colSpan={7}>
+    <div className="flex justify-center items-center py-12">
+      <PuffLoader color="rgba(49, 23, 215, 1)" size={60} />
+    </div>
+  </td>
+</tr>
               ) : currentItems.length > 0 ? (
                 currentItems.map((payment) => (
                   <tr key={payment._id} className="border-b hover:bg-gray-50">

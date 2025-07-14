@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
+import { PuffLoader } from "react-spinners";
 
 interface FormData {
   name: string;
@@ -90,7 +91,7 @@ const ProductEditForm: React.FC = () => {
   const params = useParams();
   const id = params?.id;
 
-  const router = useRouter()
+  const router = useRouter();
   // Fetch single product
   const {
     data: productData,
@@ -369,7 +370,7 @@ const ProductEditForm: React.FC = () => {
     },
     onSuccess: (response) => {
       toast.success(response.message || "Product updated successfully!");
-      router.push("/products")
+      router.push("/products");
       setSubmitStatus({
         type: "success",
         message: response.message || "Product updated successfully!",
@@ -400,10 +401,14 @@ const ProductEditForm: React.FC = () => {
 
   if (productLoading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="flex items-center gap-2">
-          <Loader2 className="h-6 w-6 animate-spin" />
-          <span>Loading product...</span>
+      <div className="flex justify-center items-center min-h-[60vh] bg-gray-50">
+        <div className="text-center">
+          <PuffLoader
+            color="rgba(49, 23, 215, 1)"
+            loading
+            speedMultiplier={1}
+            size={60} // You can adjust size
+          />
         </div>
       </div>
     );

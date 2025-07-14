@@ -138,7 +138,7 @@ const RevenueTable = () => {
                     <div className="flex items-center space-x-2">
                       <div className="w-[10px] h-[10px] bg-[#525773] rounded-full"></div>
                       <p className="text-base font-medium text-white">
-                        {revenueData?.totalPlatformEarning}
+                         {(Number(revenueData?.totalPlatformEarning || 0)).toFixed(2)}
                       </p>
                     </div>
                   </div>

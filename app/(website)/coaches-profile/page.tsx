@@ -154,6 +154,7 @@ export default function SellerProfilePage() {
     },
     onSuccess: async () => {
       toast.success("Coach deleted successfully");
+      window.location.href = "/coaches-profile"
 
       await queryClient.invalidateQueries({ queryKey: ["coaches", currentPage] });
 
@@ -268,8 +269,8 @@ export default function SellerProfilePage() {
   ];
 
   return (
-    <div className="flex h-screen">
-      <div className="flex-1 overflow-auto">
+    <div className="flex ">
+      <div className="flex-1">
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
             <div>

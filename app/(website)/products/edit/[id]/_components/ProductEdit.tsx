@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Upload, Loader2, CheckCircle, AlertCircle, X } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { Upload, AlertCircle, X, DollarSign, Package, Tag, Building2 } from "lucide-react";
 import Image from "next/image";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
@@ -12,6 +12,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
 import { PuffLoader } from "react-spinners";
+import dynamic from "next/dynamic";
+
+// Dynamically import ReactQuill to avoid SSR issues
+const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
+import "react-quill/dist/quill.snow.css";
 
 interface FormData {
   name: string;
@@ -90,8 +95,25 @@ const ProductEditForm: React.FC = () => {
   const queryClient = useQueryClient();
   const params = useParams();
   const id = params?.id;
-
   const router = useRouter();
+
+  // React Quill configuration
+  const quillModules = useMemo(() => ({
+    toolbar: [
+      [{ 'header': [1, 2, 3, false] }],
+      ['bold', 'italic', 'underline', 'strike'],
+      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+      ['blockquote', 'code-block'],
+      ['link'],
+      ['clean']
+    ],
+  }), []);
+
+  const quillFormats = [
+    'header', 'bold', 'italic', 'underline', 'strike',
+    'list', 'bullet', 'blockquote', 'code-block', 'link'
+  ];
+
   // Fetch single product
   const {
     data: productData,
@@ -150,12 +172,10 @@ const ProductEditForm: React.FC = () => {
     if (productData?.data?.product) {
       const product = productData.data.product;
 
-      // Handle subcategory - it might be string or array
       let subCategoryArray: string[] = [];
       if (Array.isArray(product.subCategory)) {
         subCategoryArray = product.subCategory;
       } else if (typeof product.subCategory === "string") {
-        // If it's a string, try to parse as JSON first, then split by comma
         try {
           subCategoryArray = JSON.parse(product.subCategory);
         } catch {
@@ -194,7 +214,6 @@ const ProductEditForm: React.FC = () => {
       [name]: value,
     }));
 
-    // Auto-calculate saved price
     if (name === "actualPrice" || name === "discountedPrice") {
       const actual =
         name === "actualPrice"
@@ -213,6 +232,13 @@ const ProductEditForm: React.FC = () => {
         }));
       }
     }
+  };
+
+  const handleDescriptionChange = (value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      description: value,
+    }));
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -248,7 +274,6 @@ const ProductEditForm: React.FC = () => {
     if (fileInput) fileInput.value = "";
   };
 
-  // Tag field handlers
   const addTag = (tag: string) => {
     const trimmedTag = tag.trim();
     if (trimmedTag && !formData.subCategory.includes(trimmedTag)) {
@@ -294,6 +319,15 @@ const ProductEditForm: React.FC = () => {
         toast.error(`Please fill in the ${field.replace(/([A-Z])/g, " $1")}`);
         return false;
       }
+    }
+
+    const tempDiv = document.createElement("div");
+    tempDiv.innerHTML = formData.description;
+    const textContent = tempDiv.textContent || tempDiv.innerText || "";
+    
+    if (!textContent.trim()) {
+      toast.error("Please provide a product description");
+      return false;
     }
 
     if (formData.subCategory.length === 0) {
@@ -401,13 +435,13 @@ const ProductEditForm: React.FC = () => {
 
   if (productLoading) {
     return (
-      <div className="flex justify-center items-center min-h-[60vh] bg-gray-50">
+      <div className="flex justify-center items-center min-h-[60vh] bg-gradient-to-br from-slate-50 to-white">
         <div className="text-center">
           <PuffLoader
-            color="rgba(49, 23, 215, 1)"
+            color="rgba(16, 185, 129, 1)"
             loading
             speedMultiplier={1}
-            size={60} // You can adjust size
+            size={60}
           />
         </div>
       </div>
@@ -416,15 +450,14 @@ const ProductEditForm: React.FC = () => {
 
   if (productError || !productData?.data?.product) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-white flex items-center justify-center">
         <div className="text-center">
           <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+          <h2 className="text-xl font-semibold text-slate-900 mb-2">
             Product Not Found
           </h2>
-          <p className="text-gray-500 mb-4">
-            The product you&apos;re looking for doesn&apos;t exist or has been
-            deleted.
+          <p className="text-slate-500 mb-4">
+            The product you&apos;re looking for doesn&apos;t exist or has been deleted.
           </p>
         </div>
       </div>
@@ -434,137 +467,165 @@ const ProductEditForm: React.FC = () => {
   const categories = categoryData?.data || [];
 
   return (
-    <div className="min-h-screen bg-white p-8">
-      <div className="">
-        <div className="flex justify-between items-center">
-          <div className="mb-6">
-            <div className="flex items-center gap-4 mb-2">
-              <h1 className="text-2xl font-semibold text-gray-900">
-                Edit Product
-              </h1>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-white">
+      <div className="p-6 lg:p-8">
+        {/* Header */}
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-slate-900 mb-2">Edit Product</h1>
+              <div className="flex items-center gap-2 text-sm text-slate-600">
+                <span>Dashboard</span>
+                <span>›</span>
+                <span>Products</span>
+                <span>›</span>
+                <span className="text-emerald-600 font-medium">Edit Product</span>
+              </div>
             </div>
-            <p className="text-gray-500">Dashboard &gt; Product &gt; Edit</p>
-          </div>
 
-          <div className="flex justify-end">
             <button
               onClick={handleSubmit}
               disabled={updateProductMutation.isPending || !token}
-              className="bg-[#A8C2A3] hover:bg-[#5b7756] text-white px-6 py-2 rounded-lg font-semibold shadow-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="bg-[#78aa6e] hover:bg-[#A8C2A3] text-white px-8 py-3 rounded-xl font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:scale-105"
             >
               {updateProductMutation.isPending ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                <span className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                   Updating...
-                </>
+                </span>
               ) : (
                 "Update Product"
               )}
             </button>
-
-            {!token && (
-              <p className="text-sm text-red-500 mt-2 ml-4">
-                Please log in to update the product
-              </p>
-            )}
           </div>
         </div>
 
-        {/* Status Messages */}
+        {/* Status Message */}
         {submitStatus.type && (
           <div
-            className={`mb-6 p-4 rounded-lg flex items-center gap-2 ${
+            className={`mb-8 p-6 rounded-xl border-l-4 ${
               submitStatus.type === "success"
-                ? "bg-green-50 border border-green-200 text-green-800"
-                : "bg-red-50 border border-red-200 text-red-800"
+                ? "bg-emerald-50 border-emerald-500 text-emerald-800"
+                : "bg-red-50 border-red-500 text-red-800"
             }`}
           >
-            {submitStatus.type === "success" ? (
-              <CheckCircle className="h-5 w-5" />
-            ) : (
-              <AlertCircle className="h-5 w-5" />
-            )}
-            <span>{submitStatus.message}</span>
+            <div className="flex items-center gap-2">
+              {submitStatus.type === "success" ? (
+                <div className="w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center">
+                  <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                </div>
+              ) : (
+                <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
+                  <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                </div>
+              )}
+              <span className="font-medium">{submitStatus.message}</span>
+            </div>
           </div>
         )}
 
+        {/* Main Form */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* LEFT SIDE */}
+          {/* Left Column */}
           <div className="space-y-6">
-            <div>
-              <label className="flex items-center gap-2 text-base font-semibold text-gray-700 mb-2">
-                Product Name
-              </label>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Product name"
-                disabled={updateProductMutation.isPending}
-              />
-            </div>
-
-            <div>
-              <label className="flex items-center gap-2 text-base font-semibold text-gray-700 mb-2">
-                Description
-              </label>
-              <textarea
-                name="description"
-                value={formData.description}
-                onChange={handleInputChange}
-                rows={4}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Product description"
-                disabled={updateProductMutation.isPending}
-              />
-            </div>
-
-            <div className="">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Product Name */}
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <Package className="w-5 h-5 text-blue-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-slate-900">Product Information</h3>
+              </div>
+              <div className="space-y-4">
                 <div>
-                  <label className="text-base font-medium mb-2 block">
-                    Actual Price
-                  </label>
+                  <Label className="text-sm font-semibold text-slate-700 mb-2 block">
+                    Product Name
+                  </Label>
                   <input
-                    type="number"
-                    step="0.01"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    placeholder="Enter product name"
+                    className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200"
+                    disabled={updateProductMutation.isPending}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Description */}
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-purple-100 rounded-lg">
+                  <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-semibold text-slate-900">Description</h3>
+              </div>
+              <div className="description-editor">
+                <ReactQuill
+                  value={formData.description}
+                  onChange={handleDescriptionChange}
+                  modules={quillModules}
+                  formats={quillFormats}
+                  placeholder="Write a detailed product description..."
+                  className="border-0"
+                  readOnly={updateProductMutation.isPending}
+                />
+              </div>
+            </div>
+
+            {/* Pricing */}
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <DollarSign className="w-5 h-5 text-green-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-slate-900">Pricing</h3>
+              </div>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-semibold text-slate-700 mb-2 block">
+                    Actual Price
+                  </Label>
+                  <input
                     name="actualPrice"
+                    type="number"
                     value={formData.actualPrice}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="100.00"
+                    placeholder="0.00"
+                    className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200"
                     disabled={updateProductMutation.isPending}
                   />
                 </div>
-
                 <div>
-                  <label className="text-base font-medium mb-2 block">
+                  <Label className="text-sm font-semibold text-slate-700 mb-2 block">
                     Discounted Price
-                  </label>
+                  </Label>
                   <input
-                    type="number"
-                    step="0.01"
                     name="discountedPrice"
+                    type="number"
                     value={formData.discountedPrice}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="80.00"
+                    placeholder="0.00"
+                    className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200"
                     disabled={updateProductMutation.isPending}
                   />
                 </div>
-
                 <div className="sm:col-span-2">
-                  <label className="text-base font-medium mb-2 block">
-                    Saved Price (Auto-calculated)
-                  </label>
+                  <Label className="text-sm font-semibold text-slate-700 mb-2 block">
+                    Saved Price
+                  </Label>
                   <input
-                    type="number"
-                    step="0.01"
                     name="savedPrice"
+                    type="number"
                     value={formData.savedPrice}
-                    className="w-full px-4 py-3 border rounded-lg"
+                    className="w-full px-4 py-3 border border-slate-300 rounded-xl bg-gray-50 text-gray-600"
                     readOnly
                   />
                 </div>
@@ -572,45 +633,44 @@ const ProductEditForm: React.FC = () => {
             </div>
           </div>
 
-          {/* RIGHT SIDE */}
-          <div className="space-y-10">
-            <div>
-              <label className="text-sm font-semibold text-gray-700 mb-2 block">
-                Product Image
-              </label>
-              <div className="relative border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
+          {/* Right Column */}
+          <div className="space-y-6 mt-4">
+            {/* Product Image */}
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-indigo-100 rounded-lg">
+                  <Upload className="w-5 h-5 text-indigo-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-slate-900">Product Image</h3>
+              </div>
+              <div className="relative border-2 border-dashed border-slate-300 rounded-xl p-8 text-center hover:border-emerald-400 transition-colors duration-200 bg-slate-50">
                 {imagePreview ? (
-                  <div>
+                  <div className="space-y-4">
                     <Image
                       src={imagePreview}
-                      width={160}
-                      height={160}
-                      alt="Product preview"
-                      className="mx-auto h-40 w-40 object-cover rounded-lg shadow"
+                      width={200}
+                      height={200}
+                      alt="Preview"
+                      className="mx-auto object-cover rounded-lg shadow-md"
                     />
-                    <div className="mt-2 space-x-2">
-                      <button
-                        type="button"
-                        onClick={removeImage}
-                        className="text-red-500 text-sm hover:text-red-600"
-                        disabled={updateProductMutation.isPending}
-                      >
-                        {formData.image
-                          ? "Remove New Image"
-                          : "Keep Current Image"}
-                      </button>
-                    </div>
+                    <button
+                      onClick={removeImage}
+                      className="text-red-500 hover:text-red-700 text-sm font-medium transition-colors"
+                      disabled={updateProductMutation.isPending}
+                    >
+                      {formData.image ? "Remove New Image" : "Keep Current Image"}
+                    </button>
                   </div>
                 ) : (
-                  <>
-                    <Upload className="mx-auto h-12 w-12 text-gray-400" />
-                    <p className="text-gray-600 mt-2">
-                      Click or drag file here
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      PNG, JPG, GIF up to 10MB
-                    </p>
-                  </>
+                  <div className="space-y-3">
+                    <div className="w-16 h-16 bg-slate-200 rounded-full flex items-center justify-center mx-auto">
+                      <Upload className="w-8 h-8 text-slate-400" />
+                    </div>
+                    <div>
+                      <p className="text-slate-700 font-medium">Click to upload or drag and drop</p>
+                      <p className="text-sm text-slate-500">PNG, JPG, GIF up to 10MB</p>
+                    </div>
+                  </div>
                 )}
                 <input
                   type="file"
@@ -620,26 +680,28 @@ const ProductEditForm: React.FC = () => {
                   disabled={updateProductMutation.isPending}
                 />
               </div>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-slate-500 mt-1">
                 Leave empty to keep current image
               </p>
             </div>
 
-            <div>
-              <label className="flex items-center gap-2 text-base font-semibold text-gray-700 mb-2">
-                Category
-              </label>
+            {/* Category */}
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-orange-100 rounded-lg">
+                  <Tag className="w-5 h-5 text-orange-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-slate-900">Category</h3>
+              </div>
               <select
                 name="category"
                 value={formData.category}
                 onChange={handleInputChange}
-                className="w-full px-4 py-3 bg-white border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 bg-white"
                 disabled={updateProductMutation.isPending || categoriesLoading}
               >
                 <option value="">
-                  {categoriesLoading
-                    ? "Loading categories..."
-                    : "Select a category"}
+                  {categoriesLoading ? "Loading categories..." : "Select category"}
                 </option>
                 {categories.map((cat: Category) => (
                   <option key={cat._id} value={cat._id}>
@@ -649,18 +711,21 @@ const ProductEditForm: React.FC = () => {
               </select>
             </div>
 
-            {/* ShadCN Tag Field for Sub Category */}
-            <div>
-              <Label className="flex items-center gap-2 text-base font-semibold text-gray-700 mb-2">
-                Sub Category
-              </Label>
-              <div className="space-y-2">
+            {/* Sub Categories */}
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-cyan-100 rounded-lg">
+                  <Tag className="w-5 h-5 text-cyan-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-slate-900">Sub Categories</h3>
+              </div>
+              <div className="space-y-3">
                 <Input
                   value={tagInput}
                   onChange={handleTagInputChange}
                   onKeyDown={handleTagInputKeyDown}
                   placeholder="Type and press Enter or comma to add subcategory"
-                  className="w-full h-[49px] rounded-lg"
+                  className="h-12 px-4 rounded-xl border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   disabled={updateProductMutation.isPending}
                 />
                 <div className="flex flex-wrap gap-2">
@@ -668,12 +733,12 @@ const ProductEditForm: React.FC = () => {
                     <Badge
                       key={index}
                       variant="secondary"
-                      className="flex items-center gap-1"
+                      className="flex items-center gap-1 px-3 py-1 bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-full"
                     >
                       {tag}
                       <button
                         onClick={() => removeTag(tag)}
-                        className="ml-1 hover:bg-gray-300 rounded-full p-0.5"
+                        className="ml-1 hover:bg-emerald-200 rounded-full p-0.5 transition-colors"
                         disabled={updateProductMutation.isPending}
                       >
                         <X size={12} />
@@ -684,39 +749,83 @@ const ProductEditForm: React.FC = () => {
               </div>
             </div>
 
-            <div>
-              <label className="text-base font-semibold text-gray-700 mb-2 block">
-                Brand
-              </label>
-              <input
-                type="text"
-                name="brand"
-                value={formData.brand}
-                onChange={handleInputChange}
-                placeholder="Brand"
-                className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                disabled={updateProductMutation.isPending}
-              />
-            </div>
+            {/* Brand and Stock */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-2 bg-pink-100 rounded-lg">
+                    <Building2 className="w-5 h-5 text-pink-600" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-slate-900">Brand</h3>
+                </div>
+                <input
+                  className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200"
+                  name="brand"
+                  value={formData.brand}
+                  onChange={handleInputChange}
+                  placeholder="Brand name"
+                  disabled={updateProductMutation.isPending}
+                />
+              </div>
 
-            <div>
-              <label className="text-base font-semibold text-gray-700 mb-2 block">
-                Stock Count
-              </label>
-              <input
-                type="number"
-                name="countInStock"
-                value={formData.countInStock}
-                onChange={handleInputChange}
-                placeholder="Stock Count"
-                className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                disabled={updateProductMutation.isPending}
-                min="0"
-              />
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-2 bg-yellow-100 rounded-lg">
+                    <Package className="w-5 h-5 text-yellow-600" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-slate-900">Stock</h3>
+                </div>
+                <input
+                  className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200"
+                  name="countInStock"
+                  type="number"
+                  value={formData.countInStock}
+                  onChange={handleInputChange}
+                  placeholder="Stock count"
+                  min="0"
+                  disabled={updateProductMutation.isPending}
+                />
+              </div>
             </div>
           </div>
         </div>
       </div>
+
+      <style jsx global>{`
+        .description-editor .ql-editor {
+          min-height: 200px;
+          font-size: 14px;
+          line-height: 1.6;
+        }
+        
+        .description-editor .ql-toolbar {
+          border-top: 1px solid #e2e8f0;
+          border-left: 1px solid #e2e8f0;
+          border-right: 1px solid #e2e8f0;
+          border-bottom: none;
+          border-radius: 0.75rem 0.75rem 0 0;
+        }
+        
+        .description-editor .ql-container {
+          border-left: 1px solid #e2e8f0;
+          border-right: 1px solid #e2e8f0;
+          border-bottom: 1px solid #e2e8f0;
+          border-top: none;
+          border-radius: 0 0 0.75rem 0.75rem;
+        }
+        
+        .description-editor .ql-editor:focus {
+          outline: none;
+        }
+        
+        .description-editor .ql-toolbar:hover {
+          border-color: #10b981;
+        }
+        
+        .description-editor .ql-container:hover {
+          border-color: #10b981;
+        }
+      `}</style>
     </div>
   );
 };

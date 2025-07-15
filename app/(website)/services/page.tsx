@@ -111,7 +111,7 @@ const columns = [
   },
   { key: "originalId", label: "Id" },
   { key: "price", label: "Price" },
-  { key: "format", label: "Format" },
+  // { key: "format", label: "Format" },
   {
     key: "date",
     label: "Date",

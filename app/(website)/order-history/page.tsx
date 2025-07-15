@@ -257,12 +257,12 @@ export default function OrderHistoryPage() {
             <tbody>
               {isLoading ? (
                 <tr>
-  <td colSpan={7}>
-    <div className="flex justify-center items-center py-12">
-      <PuffLoader color="rgba(49, 23, 215, 1)" size={60} />
-    </div>
-  </td>
-</tr>
+                  <td colSpan={7}>
+                    <div className="flex justify-center items-center py-12">
+                      <PuffLoader color="rgba(49, 23, 215, 1)" size={60} />
+                    </div>
+                  </td>
+                </tr>
               ) : currentItems.length > 0 ? (
                 currentItems.map((payment) => (
                   <tr key={payment._id} className="border-b hover:bg-gray-50">
@@ -270,7 +270,7 @@ export default function OrderHistoryPage() {
                       {payment._id.slice(-8)}
                     </td>
                     <td className="p-4 text-gray-900 max-w-xs truncate">
-                      {getProductNames(payment?.product)}
+                      {getProductNames(payment?.product)}...
                     </td>
                     <td className="p-4 text-gray-900 font-semibold">
                       ${payment.amount.toFixed(2)}
@@ -325,6 +325,7 @@ export default function OrderHistoryPage() {
             <div className="flex space-x-2">
               <Button
                 variant="outline"
+                className="bg-[#90c785]"
                 size="sm"
                 onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1}
@@ -337,6 +338,7 @@ export default function OrderHistoryPage() {
                   key={index}
                   variant={page === currentPage ? "default" : "outline"}
                   size="sm"
+                  className="bg-[#84b47a]"
                   disabled={page === "..."}
                   onClick={() =>
                     typeof page === "number" && setCurrentPage(page)
@@ -349,6 +351,7 @@ export default function OrderHistoryPage() {
               <Button
                 variant="outline"
                 size="sm"
+                className="bg-[#85b97b]"
                 onClick={() =>
                   setCurrentPage((prev) => Math.min(prev + 1, totalPages))
                 }

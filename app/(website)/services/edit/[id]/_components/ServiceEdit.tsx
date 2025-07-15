@@ -1,18 +1,22 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { FileText, Image, Users, Gift, X, Loader2 } from "lucide-react";
+import { FileText, Image, Users, Gift, Package, X, Loader2 } from "lucide-react";
 import NextImage from "next/image";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
+import dynamic from "next/dynamic";
+
+// Dynamically import ReactQuill to avoid SSR issues
+const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
+import "react-quill/dist/quill.snow.css";
 
 // Types
 type ServiceData = {
@@ -143,6 +147,31 @@ const ServiceEdit = () => {
 
   const [isModified, setIsModified] = useState(false);
 
+  // React Quill configuration
+  const quillModules = useMemo(() => ({
+    toolbar: [
+      [{ header: [1, 2, 3, false] }],
+      ["bold", "italic", "underline", "strike"],
+      [{ list: "ordered" }, { list: "bullet" }],
+      ["blockquote", "code-block"],
+      ["link"],
+      ["clean"],
+    ],
+  }), []);
+
+  const quillFormats = [
+    "header",
+    "bold",
+    "italic",
+    "underline",
+    "strike",
+    "list",
+    "bullet",
+    "blockquote",
+    "code-block",
+    "link",
+  ];
+
   // Fetch service data
   const {
     data: serviceResponse,
@@ -154,7 +183,7 @@ const ServiceEdit = () => {
     queryFn: () => fetchService(serviceId),
     enabled: !!serviceId,
     staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes (replaces cacheTime)
+    gcTime: 10 * 60 * 1000, // 10 minutes
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
@@ -163,22 +192,13 @@ const ServiceEdit = () => {
   const updateMutation = useMutation({
     mutationFn: updateService,
     onSuccess: (data) => {
-      // Update the cache with the new data
-      // router.push("/services")
-      window.location.href = "/services"
+      window.location.href = "/services";
       queryClient.setQueryData(["service", serviceId], data);
-      // Invalidate and refetch related queries
-      queryClient.invalidateQueries({
-        queryKey: ["services"], // Invalidate services list
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["service", serviceId], // Invalidate current service
-      });
+      queryClient.invalidateQueries({ queryKey: ["services"] });
+      queryClient.invalidateQueries({ queryKey: ["service", serviceId] });
       
-      // Reset form state
       setIsModified(false);
       
-      // Clear file states after successful update
       setFileStates({
         overviewImage: null,
         receiveImage: null,
@@ -186,14 +206,12 @@ const ServiceEdit = () => {
         icon: null,
       });
       
-      // Clear any blob URLs for file previews
       Object.values(previewUrls).forEach((url) => {
         if (url?.startsWith("blob:")) {
           URL.revokeObjectURL(url);
         }
       });
       
-      // Reset preview URLs to server images
       if (data.data) {
         const service = data.data;
         setPreviewUrls({
@@ -211,18 +229,8 @@ const ServiceEdit = () => {
       toast.error(`Failed to update service: ${error.message}`);
     },
     onMutate: async (variables) => {
-      // Cancel any outgoing refetches
-      await queryClient.cancelQueries({
-        queryKey: ["service", variables.serviceId],
-      });
-
-      // Snapshot the previous value
-      const previousService = queryClient.getQueryData<ServiceResponse>([
-        "service",
-        variables.serviceId,
-      ]);
-
-      // Optimistically update the cache
+      await queryClient.cancelQueries({ queryKey: ["service", variables.serviceId] });
+      const previousService = queryClient.getQueryData<ServiceResponse>(["service", variables.serviceId]);
       if (previousService) {
         const optimisticData: ServiceResponse = {
           ...previousService,
@@ -232,18 +240,12 @@ const ServiceEdit = () => {
             updatedAt: new Date().toISOString(),
           },
         };
-        
         queryClient.setQueryData(["service", variables.serviceId], optimisticData);
       }
-
-      // Return a context object with the snapshotted value
       return { previousService };
     },
     onSettled: () => {
-      // Always refetch after error or success
-      queryClient.invalidateQueries({
-        queryKey: ["service", serviceId],
-      });
+      queryClient.invalidateQueries({ queryKey: ["service", serviceId] });
     },
   });
 
@@ -272,10 +274,17 @@ const ServiceEdit = () => {
   }, [serviceResponse]);
 
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | string,
+    field?: keyof typeof formData
   ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (typeof e === "string" && field) {
+      // Handle ReactQuill change
+      setFormData((prev) => ({ ...prev, [field]: e }));
+    } else if (typeof e !== "string") {
+      // Handle input/textarea change
+      const { name, value } = e.target;
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
     setIsModified(true);
   };
 
@@ -285,27 +294,27 @@ const ServiceEdit = () => {
       return;
     }
 
-    // Clean up previous blob URL if it exists
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("File size must be less than 5MB");
+      return;
+    }
+
     if (previewUrls[field]?.startsWith("blob:")) {
       URL.revokeObjectURL(previewUrls[field]!);
     }
 
-    // Create new blob URL
     const url = URL.createObjectURL(file);
     
-    // Update states
     setPreviewUrls((prev) => ({ ...prev, [field]: url }));
     setFileStates((prev) => ({ ...prev, [field]: file }));
     setIsModified(true);
   };
 
   const clearFilePreview = (field: keyof PreviewUrls) => {
-    // Clean up blob URL if it exists
     if (previewUrls[field]?.startsWith("blob:")) {
       URL.revokeObjectURL(previewUrls[field]!);
     }
     
-    // Reset to original server image if it exists
     const originalImage = serviceResponse?.data ? serviceResponse.data[field as keyof ServiceData] : null;
     
     setPreviewUrls((prev) => ({ 
@@ -314,7 +323,6 @@ const ServiceEdit = () => {
     }));
     setFileStates((prev) => ({ ...prev, [field]: null }));
     
-    // Clear file input
     const input = document.getElementById(field) as HTMLInputElement;
     if (input) input.value = "";
     
@@ -324,7 +332,6 @@ const ServiceEdit = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Form validation
     if (!formData.title.trim()) {
       toast.error("Title is required");
       return;
@@ -357,7 +364,7 @@ const ServiceEdit = () => {
       serviceId, 
       data: updateData,
       files: fileStates,
-      token: session?.accessToken, // Pass authentication token
+      token: session?.accessToken,
     });
   };
 
@@ -381,55 +388,72 @@ const ServiceEdit = () => {
     label: string;
     icon: React.ElementType;
   }) => (
-    <div className="space-y-3">
-      <Label htmlFor={field} className="flex items-center gap-2 font-semibold">
-        <Icon className="w-4 h-4" />
-        {label}
-      </Label>
-      <Input
-        id={field}
-        type="file"
-        accept="image/*"
-        onChange={(e) => {
-          if (e.target.files?.[0]) {
-            handleFilePreview(field, e.target.files[0]);
-          }
-        }}
-        className="border border-[#B6B6B6] focus:border-[#A8C2A3] focus:ring-[#A8C2A3]"
-      />
-      {previewUrls[field] && (
-        <div className="mt-4 bg-gray-50 border p-3 rounded-lg relative max-w-xs">
-          <Button
-            type="button"
-            onClick={() => clearFilePreview(field)}
-            size="sm"
-            variant="ghost"
-            className="absolute top-2 right-2 p-1 h-6 w-6 z-10 bg-white rounded-full shadow-md hover:bg-gray-100"
-          >
-            <X className="w-4 h-4 text-red-500" />
-          </Button>
-          <div className="relative w-full h-32">
-            <NextImage
-              src={previewUrls[field]!}
-              alt={`${label} preview`}
-              fill
-              className="object-cover rounded-md w-full"
-              unoptimized={previewUrls[field]?.startsWith("blob:")}
-            />
-          </div>
-          <p className="text-xs text-gray-500 mt-2">
-            {fileStates[field] ? "New file selected" : "Current image"}
-          </p>
+    <div className="space-y-4">
+      <div className="flex items-center gap-4 mb-4">
+        <div className="p-3 bg-indigo-100 rounded-full">
+          <Icon className="w-6 h-6 text-indigo-600" />
         </div>
-      )}
+        <h3 className="text-xl font-semibold text-gray-900">{label}</h3>
+      </div>
+      <div className="space-y-4">
+        <div className="relative">
+          <Input
+            id={field}
+            type="file"
+            accept="image/*"
+            onChange={(e) => {
+              if (e.target.files?.[0]) {
+                handleFilePreview(field, e.target.files[0]);
+              }
+            }}
+            className="w-full h-[70px] px-5 py-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-300 bg-gray-50/50 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-600 file:text-white hover:file:bg-emerald-700"
+            disabled={updateMutation.isPending}
+          />
+        </div>
+        {previewUrls[field] && (
+          <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <div className="text-sm font-medium text-gray-900 mb-1">
+                  {fileStates[field]?.name || "Current image"}
+                </div>
+                {fileStates[field] && (
+                  <div className="text-xs text-gray-500">
+                    {(fileStates[field]?.size / 1024)?.toFixed(1)} KB • {fileStates[field]?.type}
+                  </div>
+                )}
+              </div>
+              <Button
+                onClick={() => clearFilePreview(field)}
+                variant="outline"
+                size="sm"
+                className="ml-3 h-8 w-8 p-0 hover:bg-red-50 hover:border-red-red-200"
+                disabled={updateMutation.isPending}
+              >
+                <X className="w-4 h-4 text-red-500" />
+              </Button>
+            </div>
+            <div className="mt-4 w-full max-w-xs">
+              <NextImage
+                src={previewUrls[field]!}
+                width={240}
+                height={240}
+                alt={`${label} preview`}
+                className="mx-auto object-cover rounded-xl shadow-md"
+                unoptimized={previewUrls[field]?.startsWith("blob:")}
+              />
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 
   if (isLoading) {
     return (
-      <div className="bg-[#F8FAF9] min-h-screen flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-[#A8C2A3] mx-auto mb-4" />
+          <Loader2 className="h-8 w-8 animate-spin text-emerald-600 mx-auto mb-4" />
           <p className="text-gray-600">Loading service data...</p>
         </div>
       </div>
@@ -438,12 +462,15 @@ const ServiceEdit = () => {
 
   if (error) {
     return (
-      <div className="bg-[#F8FAF9] min-h-screen flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-600 mb-4">
             Error loading service: {error instanceof Error ? error.message : "Unknown error"}
           </p>
-          <Button onClick={() => refetch()} className="bg-[#A8C2A3] hover:bg-[#96B091]">
+          <Button
+            onClick={() => refetch()}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 rounded-xl font-semibold"
+          >
             Retry
           </Button>
         </div>
@@ -453,10 +480,13 @@ const ServiceEdit = () => {
 
   if (!serviceResponse?.data) {
     return (
-      <div className="bg-[#F8FAF9] min-h-screen flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
         <div className="text-center">
           <p className="text-gray-600 mb-4">No service data found</p>
-          <Button onClick={() => refetch()} className="bg-[#A8C2A3] hover:bg-[#96B091]">
+          <Button
+            onClick={() => refetch()}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 rounded-xl font-semibold"
+          >
             Retry
           </Button>
         </div>
@@ -465,152 +495,281 @@ const ServiceEdit = () => {
   }
 
   return (
-    <div className="bg-[#F8FAF9] min-h-screen">
-      <form onSubmit={handleSubmit} className="">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex flex-col md:flex-row justify-between gap-4">
-              <div>
-                <h2 className="text-2xl font-bold">Edit Service</h2>
-                <p className="text-sm text-gray-500">
-                  Dashboard &gt; Services &gt; Edit &gt; {serviceResponse.data.title}
-                </p>
-              </div>
-              <div className="flex gap-2">
+    <div className="">
+      <div className="">
+        <form onSubmit={handleSubmit}>
+          <Card className="">
+            <CardHeader>
+              <CardTitle className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+                <div>
+                  <h1 className="text-4xl font-bold text-gray-900 mb-3">Edit Service</h1>
+                  <div className="flex items-center gap-3 text-sm text-gray-600">
+                    <span>Dashboard</span>
+                    <span>›</span>
+                    <span>Services</span>
+                    <span>›</span>
+                    <span className="text-emerald-600 font-semibold">Edit Service</span>
+                  </div>
+                </div>
                 <Button
                   type="submit"
                   disabled={!isModified || updateMutation.isPending}
-                  className="bg-[#A8C2A3] text-white hover:bg-[#96B091] disabled:opacity-50"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 rounded-xl font-semibold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:scale-105"
                 >
                   {updateMutation.isPending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="w-5 h-5 animate-spin" />
                       Updating...
-                    </>
+                    </span>
                   ) : (
                     "Update Service"
                   )}
                 </Button>
-              </div>
-            </CardTitle>
-          </CardHeader>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-8">
+                {/* Basic Information */}
+                <div className="">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="p-3 bg-blue-100 rounded-full">
+                      <Package className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-gray-900">Service Information</h3>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div>
+                      <Label
+                        htmlFor="title"
+                        className="text-base font-semibold text-gray-700 mb-3 block"
+                      >
+                        Service Title <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        id="title"
+                        name="title"
+                        value={formData.title}
+                        onChange={handleInputChange}
+                        placeholder="Enter service title"
+                        className="w-full h-[50px] px-5 py-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-300 bg-gray-50/50"
+                        disabled={updateMutation.isPending}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label
+                        htmlFor="price"
+                        className="text-base font-semibold text-gray-700 mb-3 block"
+                      >
+                        Price <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        id="price"
+                        name="price"
+                        type="number"
+                        value={formData.price}
+                        onChange={handleInputChange}
+                        placeholder="0.00"
+                        className="w-full h-[50px] px-5 py-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-300 bg-gray-50/50"
+                        step="0.01"
+                        min="0"
+                        disabled={updateMutation.isPending}
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
 
-          <CardContent className="space-y-10">
-            {/* Title, Price, Description */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label htmlFor="title" className="font-semibold">
-                  Title <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="title"
-                  name="title"
-                  value={formData.title}
-                  onChange={handleInputChange}
-                  placeholder="Enter title"
-                  className="h-[50px] border border-[#B6B6B6] focus:border-[#A8C2A3] focus:ring-[#A8C2A3]"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="price" className="font-semibold">
-                  Price <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="price"
-                  name="price"
-                  type="number"
-                  value={formData.price}
-                  onChange={handleInputChange}
-                  placeholder="0.00"
-                  className="h-[50px] border border-[#B6B6B6] focus:border-[#A8C2A3] focus:ring-[#A8C2A3]"
-                  step="0.01"
-                  min="0"
-                  required
-                />
-              </div>
-            </div>
+                {/* Description */}
+                <div className="">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="p-3 bg-purple-100 rounded-full">
+                      <svg
+                        className="w-6 h-6 text-purple-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M4 6h16M4 12h16M4 18h7"
+                        />
+                      </svg>
+                    </div>
+                    <h3 className="text-xl font-semibold text-gray-900">Description</h3>
+                  </div>
+                  <div className="description-editor">
+                    <ReactQuill
+                      value={formData.description}
+                      onChange={(value) => handleInputChange(value, "description")}
+                      modules={quillModules}
+                      formats={quillFormats}
+                      placeholder="Write a detailed service description..."
+                      className="border-0 bg-gray-50/50 rounded-xl"
+                      readOnly={updateMutation.isPending}
+                    />
+                  </div>
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="description" className="font-semibold">
-                Description <span className="text-red-500">*</span>
-              </Label>
-              <Textarea
-                id="description"
-                name="description"
-                rows={4}
-                value={formData.description}
-                onChange={handleInputChange}
-                placeholder="Write description..."
-                className="border border-[#B6B6B6] focus:border-[#A8C2A3] focus:ring-[#A8C2A3] resize-none"
-                required
-              />
-            </div>
+                {/* Overview Section */}
+                <div className="">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="p-3 bg-orange-100 rounded-full">
+                    </div>
+                    <h3 className="text-xl font-semibold text-gray-900">Overview</h3>
+                  </div>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div className="space-y-2">
+                      <Label
+                        htmlFor="overview"
+                        className="text-base font-semibold text-gray-700 mb-3 block"
+                      >
+                        Overview Text
+                      </Label>
+                      <div className="description-editor">
+                        <ReactQuill
+                          value={formData.overview}
+                          onChange={(value) => handleInputChange(value, "overview")}
+                          modules={quillModules}
+                          formats={quillFormats}
+                          placeholder="Overview content"
+                          className="border-0 bg-gray-50/50 rounded-xl"
+                          readOnly={updateMutation.isPending}
+                        />
+                      </div>
+                    </div>
+                    <FileUpload
+                      field="overviewImage"
+                      label="Overview Image"
+                      icon={Image}
+                    />
+                  </div>
+                </div>
 
-            {/* Overview */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <div className="space-y-2">
-                <Label htmlFor="overview" className="font-semibold">
-                  Overview Text
-                </Label>
-                <Textarea
-                  id="overview"
-                  name="overview"
-                  rows={6}
-                  value={formData.overview}
-                  onChange={handleInputChange}
-                  className="border border-[#B6B6B6] focus:border-[#A8C2A3] focus:ring-[#A8C2A3] resize-none"
-                  placeholder="Overview content"
-                />
+                {/* Receive Section */}
+                <div className="">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="p-3 bg-green-100 rounded-full">
+                      <Gift className="w-6 h-6 text-green-600" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-gray-900">Receive Details</h3>
+                  </div>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div className="space-y-2">
+                      <Label
+                        htmlFor="receive"
+                        className="text-base font-semibold text-gray-700 mb-3 block"
+                      >
+                        Receive Details
+                      </Label>
+                      <div className="description-editor">
+                        <ReactQuill
+                          value={formData.receive}
+                          onChange={(value) => handleInputChange(value, "receive")}
+                          modules={quillModules}
+                          formats={quillFormats}
+                          placeholder="What users will receive"
+                          className="border-0 bg-gray-50/50 rounded-xl"
+                          readOnly={updateMutation.isPending}
+                        />
+                      </div>
+                    </div>
+                    <FileUpload
+                      field="receiveImage"
+                      label="Receive Image"
+                      icon={Gift}
+                    />
+                  </div>
+                </div>
+
+                {/* Target Audience */}
+                <div className="">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="p-3 bg-pink-100 rounded-full">
+                      <Users className="w-6 h-6 text-pink-600" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-gray-900">Target Audience</h3>
+                  </div>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div className="space-y-2">
+                      <Label
+                        htmlFor="whom"
+                        className="text-base font-semibold text-gray-700 mb-3 block"
+                      >
+                        For Whom
+                      </Label>
+                      <div className="description-editor">
+                        <ReactQuill
+                          value={formData.whom}
+                          onChange={(value) => handleInputChange(value, "whom")}
+                          modules={quillModules}
+                          formats={quillFormats}
+                          placeholder="Describe the audience"
+                          className="border-0 bg-gray-50/50 rounded-xl"
+                          readOnly={updateMutation.isPending}
+                        />
+                      </div>
+                    </div>
+                    <FileUpload
+                      field="whomImage"
+                      label="Audience Image"
+                      icon={Users}
+                    />
+                  </div>
+                </div>
+
+                {/* Icon Upload */}
+                <div className="">
+                  <div className="max-w-md">
+                    <FileUpload field="icon" label="Icon" icon={FileText} />
+                  </div>
+                </div>
               </div>
-              <FileUpload field="overviewImage" label="Overview Image" icon={Image} />
-            </div>
+            </CardContent>
+          </Card>
+        </form>
+      </div>
 
-            {/* Receive */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <div className="space-y-2">
-                <Label htmlFor="receive" className="font-semibold">
-                  Receive Details
-                </Label>
-                <Textarea
-                  id="receive"
-                  name="receive"
-                  rows={6}
-                  value={formData.receive}
-                  onChange={handleInputChange}
-                  className="border border-[#B6B6B6] focus:border-[#A8C2A3] focus:ring-[#A8C2A3] resize-none"
-                  placeholder="What users will receive"
-                />
-              </div>
-              <FileUpload field="receiveImage" label="Receive Image" icon={Gift} />
-            </div>
+      <style jsx global>{`
+        .description-editor .ql-editor {
+          min-height: 240px;
+          font-size: 16px;
+          line-height: 1.7;
+          background-color: #f9fafb;
+          border-radius: 0 0 0.75rem 0.75rem;
+        }
 
-            {/* Whom */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <div className="space-y-2">
-                <Label htmlFor="whom" className="font-semibold">
-                  For Whom
-                </Label>
-                <Textarea
-                  id="whom"
-                  name="whom"
-                  rows={6}
-                  value={formData.whom}
-                  onChange={handleInputChange}
-                  className="border border-[#B6B6B6] focus:border-[#A8C2A3] focus:ring-[#A8C2A3] resize-none"
-                  placeholder="Describe the audience"
-                />
-              </div>
-              <FileUpload field="whomImage" label="Audience Image" icon={Users} />
-            </div>
+        .description-editor .ql-toolbar {
+          border-top: 1px solid #e5e7eb;
+          border-left: 1px solid #e5e7eb;
+          border-right: 1px solid #e5e7eb;
+          border-bottom: none;
+          border-radius: 0.75rem 0.75rem 0 0;
+          background-color: #ffffff;
+        }
 
-            {/* Icon */}
-            <div className="max-w-md">
-              <FileUpload field="icon" label="Icon" icon={FileText} />
-            </div>
-          </CardContent>
-        </Card>
-      </form>
+        .description-editor .ql-container {
+          border-left: 1px solid #e5e7eb;
+          border-right: 1px solid #e5e7eb;
+          border-bottom: 1px solid #e5e7eb;
+          border-top: none;
+          border-radius: 0 0 0.75rem 0.75rem;
+        }
+
+        .description-editor .ql-editor:focus {
+          outline: none;
+        }
+
+        .description-editor .ql-toolbar:hover {
+          border-color: #10b981;
+        }
+
+        .description-editor .ql-container:hover {
+          border-color: #10b981;
+        }
+      `}</style>
     </div>
   );
 };

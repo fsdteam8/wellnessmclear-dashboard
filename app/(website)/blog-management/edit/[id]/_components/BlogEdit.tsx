@@ -11,18 +11,18 @@ import Image from "next/image";
 import dynamic from "next/dynamic";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { PageHeader } from "@/components/page-header";
+import { useSession } from "next-auth/react";
+import { toast } from "sonner";
 
 // Dynamically import ReactQuill to avoid SSR issues
 const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 import "react-quill/dist/quill.snow.css";
-import { useSession } from "next-auth/react";
-import { toast } from "sonner";
 
 interface Blog {
   _id: string;
   title: string;
   description: string;
-  image: string | null; // Changed from 'thumbnail' to 'image'
+  image: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -30,7 +30,7 @@ interface Blog {
 interface BlogResponse {
   status: boolean;
   message: string;
-  data: Blog[]; // Changed to array since API returns array
+  data: Blog[];
 }
 
 export default function BlogEdit() {
@@ -38,14 +38,9 @@ export default function BlogEdit() {
   const params = useParams();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
-
   const session = useSession();
-  console.log("session", session);
-
   const TOKEN = session?.data?.accessToken;
-
   const blogId = params.id as string;
-  console.log("params", params);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -54,50 +49,40 @@ export default function BlogEdit() {
 
   const [thumbnail, setThumbnail] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
-  const [existingThumbnail, setExistingThumbnail] = useState<string | null>(
-    null
-  );
-  
-  // Fetch existing blog data
-  const {
-    data: blogData,
-    isLoading: isFetchingBlog,
-    error: fetchError,
-  } = useQuery({
-    queryKey: ["blog", blogId],
-    queryFn: async () => {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/blog/${blogId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${TOKEN}`,
-          },
+  const [existingThumbnail, setExistingThumbnail] = useState<string | null>(null);
+
+  const { data: blogData, isLoading: isFetchingBlog, error: fetchError } =
+    useQuery({
+      queryKey: ["blog", blogId],
+      queryFn: async () => {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/blog/${blogId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${TOKEN}`,
+            },
+          }
+        );
+        if (!res.ok) {
+          throw new Error("Failed to fetch blog");
         }
-      );
-      if (!res.ok) {
-        throw new Error("Failed to fetch blog");
-      }
-      return res.json() as Promise<BlogResponse>;
-    },
-    enabled: !!blogId && !!TOKEN,
-  });
+        return res.json() as Promise<BlogResponse>;
+      },
+      enabled: !!blogId && !!TOKEN,
+    });
 
-  console.log("blog", blogData)
-
-  // Pre-fill form when blog data is loaded
   useEffect(() => {
     if (blogData?.data && blogData.data.length > 0) {
-      const blog = blogData.data[0]; // Get the first (and likely only) blog from the array
+      const blog = blogData.data[0];
       setFormData({
         title: blog.title || "",
         description: blog.description || "",
       });
-      setExistingThumbnail(blog.image); // Changed from 'thumbnail' to 'image'
-      setThumbnailPreview(blog.image); // Changed from 'thumbnail' to 'image'
+      setExistingThumbnail(blog.image);
+      setThumbnailPreview(blog.image);
     }
   }, [blogData]);
 
-  // Quill modules configuration
   const modules = {
     toolbar: [
       [{ header: [1, 2, 3, 4, 5, 6, false] }],
@@ -139,7 +124,6 @@ export default function BlogEdit() {
     "video",
   ];
 
-  // Update blog mutation
   const updateBlogMutation = useMutation({
     mutationFn: async (data: FormData) => {
       const response = await fetch(
@@ -161,13 +145,13 @@ export default function BlogEdit() {
       return response.json() as Promise<BlogResponse>;
     },
     onSuccess: (data) => {
-      toast.success(data?.message)
+      toast.success(data?.message);
       queryClient.invalidateQueries({ queryKey: ["blog"] });
       queryClient.invalidateQueries({ queryKey: ["blog", blogId] });
       router.push("/blog-management");
     },
     onError: (error: Error) => {
-      toast.error(error?.message)
+      toast.error(error?.message);
     },
   });
 
@@ -180,13 +164,6 @@ export default function BlogEdit() {
         setThumbnailPreview(e.target?.result as string);
       };
       reader.readAsDataURL(file);
-
-      console.log("Uploaded file:", {
-        name: file.name,
-        size: file.size,
-        type: file.type,
-        lastModified: file.lastModified,
-      });
     }
   };
 
@@ -196,23 +173,20 @@ export default function BlogEdit() {
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
-    console.log("New thumbnail removed, reverted to existing");
   };
 
   const handleDescriptionChange = (content: string) => {
     setFormData({ ...formData, description: content });
-    console.log("Description changed:", content);
   };
 
-  const handleSubmit = async (e?: React.FormEvent) => {
+  const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
 
     if (!formData.title.trim()) {
-      toast.error('Blog title is required')
+      toast.error("Blog title is required");
       return;
     }
 
-    // Create FormData object for the API request
     const blogFormData = new FormData();
     blogFormData.append("title", formData.title);
     blogFormData.append("description", formData.description);
@@ -221,23 +195,6 @@ export default function BlogEdit() {
       blogFormData.append("image", thumbnail);
     }
 
-    console.log("=== UPDATING BLOG ===");
-    console.log("Blog ID:", blogId);
-    console.log("Title:", formData.title);
-    console.log("Description:", formData.description);
-    console.log(
-      "New Thumbnail:",
-      thumbnail
-        ? {
-            name: thumbnail.name,
-            size: thumbnail.size,
-            type: thumbnail.type,
-          }
-        : "No new thumbnail"
-    );
-    console.log("======================");
-
-    // Submit the form data using the mutation
     updateBlogMutation.mutate(blogFormData);
   };
 
@@ -294,8 +251,7 @@ export default function BlogEdit() {
             buttonText="Update"
             onButtonClick={handleSubmit}
           />
-          <p className="text-gray-500 -mt-4" >Dashboard &gt; Blog management</p>
-          
+          <p className="text-gray-500 -mt-4">Dashboard &gt; Blog management</p>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2">
@@ -312,9 +268,7 @@ export default function BlogEdit() {
                       placeholder="Add your title..."
                       value={formData.title}
                       onChange={(e) => {
-                        const newTitle = e.target.value;
-                        setFormData({ ...formData, title: newTitle });
-                        console.log("Title changed:", newTitle);
+                        setFormData({ ...formData, title: e.target.value });
                       }}
                       className="mt-3 border border-[#707070] h-[50px]"
                     />
@@ -331,9 +285,7 @@ export default function BlogEdit() {
                           modules={modules}
                           formats={formats}
                           placeholder="Write your blog content here..."
-                          style={{
-                            height: "300px",
-                          }}
+                          className="min-h-[300px]"
                         />
                       </div>
                     </div>
@@ -406,13 +358,17 @@ export default function BlogEdit() {
       <style jsx global>{`
         .ql-editor {
           min-height: 300px !important;
+          max-height: 400px !important; /* added max height */
+          overflow-y: auto !important; /* add vertical scrollbar */
           font-family: inherit;
+          font-size: 16px;
         }
         .ql-toolbar {
           border-top: none !important;
           border-left: none !important;
           border-right: none !important;
           border-bottom: 1px solid #707070 !important;
+          background-color: #fafafa;
         }
         .ql-container {
           border-bottom: none !important;

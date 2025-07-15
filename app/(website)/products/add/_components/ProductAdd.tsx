@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Image from "next/image";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
@@ -8,8 +8,13 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { X } from "lucide-react";
+import { X, Upload, DollarSign, Package, Tag, Building2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
+
+// Dynamically import ReactQuill to avoid SSR issues
+const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
+import "react-quill/dist/quill.snow.css";
 
 interface FormData {
   name: string;
@@ -58,7 +63,24 @@ const ProductAddForm = () => {
 
   const session = useSession();
   const token = session?.data?.accessToken;
-  const reouter = useRouter()
+  const router = useRouter();
+
+  // React Quill configuration
+  const quillModules = useMemo(() => ({
+    toolbar: [
+      [{ 'header': [1, 2, 3, false] }],
+      ['bold', 'italic', 'underline', 'strike'],
+      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+      ['blockquote', 'code-block'],
+      ['link'],
+      ['clean']
+    ],
+  }), []);
+
+  const quillFormats = [
+    'header', 'bold', 'italic', 'underline', 'strike',
+    'list', 'bullet', 'blockquote', 'code-block', 'link'
+  ];
 
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -89,6 +111,13 @@ const ProductAddForm = () => {
         }));
       }
     }
+  };
+
+  const handleDescriptionChange = (value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      description: value,
+    }));
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -256,7 +285,7 @@ const ProductAddForm = () => {
     },
     onSuccess: (response) => {
       toast.success(response.message || "Product added successfully!");
-      reouter.push('/products')
+      router.push('/products');
       setSubmitStatus({
         type: "success",
         message: response.message || "Product added successfully!",
@@ -296,252 +325,360 @@ const ProductAddForm = () => {
   const categories = categoryData?.data || [];
 
   return (
-    <div className="min-h-screen bg-white p-8">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Add Product</h1>
-          <p className="text-sm text-gray-500">Dashboard &gt; Product</p>
-        </div>
-
-        <div>
-          <button
-            onClick={handleSubmit}
-            disabled={submitProductMutation.isPending || !token}
-            className="bg-[#A8C2A3] hover:bg-[#4a6843] text-white px-6 py-2 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {submitProductMutation.isPending ? "Submitting..." : "Add Product"}
-          </button>
-        </div>
-      </div>
-
-      {submitStatus.type && (
-        <div
-          className={`mb-6 p-4 rounded-lg text-sm ${
-            submitStatus.type === "success"
-              ? "bg-green-100 text-green-800"
-              : "bg-red-100 text-red-800"
-          }`}
-        >
-          {submitStatus.message}
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* LEFT */}
-        <div className="space-y-6">
-          <div>
-            <label className="text-sm font-semibold block mb-2">
-              Product Name
-            </label>
-            <input
-              name="name"
-              value={formData.name}
-              onChange={handleInputChange}
-              placeholder="Product name"
-              className="input-style"
-              disabled={submitProductMutation.isPending}
-            />
-          </div>
-
-          <div>
-            <label className="text-sm font-semibold block mb-2">
-              Description
-            </label>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleInputChange}
-              rows={4}
-              placeholder="Product description"
-              className="input-style resize-none"
-              disabled={submitProductMutation.isPending}
-            />
-          </div>
-
-          <div className="rounded-lg">
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium mb-2 block">
-                  Actual Price
-                </label>
-                <input
-                  name="actualPrice"
-                  type="number"
-                  value={formData.actualPrice}
-                  onChange={handleInputChange}
-                  className="input-style"
-                  disabled={submitProductMutation.isPending}
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium mb-2 block">
-                  Discounted Price
-                </label>
-                <input
-                  name="discountedPrice"
-                  type="number"
-                  value={formData.discountedPrice}
-                  onChange={handleInputChange}
-                  className="input-style"
-                  disabled={submitProductMutation.isPending}
-                />
-              </div>
-              <div className="sm:col-span-2">
-                <label className="text-sm font-medium mb-2 block">
-                  Saved Price
-                </label>
-                <input
-                  name="savedPrice"
-                  type="number"
-                  value={formData.savedPrice}
-                  className="input-style"
-                  readOnly
-                />
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-white">
+      <div className="p-6 lg:p-8">
+        {/* Header */}
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-slate-900 mb-2">Add New Product</h1>
+              <div className="flex items-center gap-2 text-sm text-slate-600">
+                <span>Dashboard</span>
+                <span>›</span>
+                <span>Products</span>
+                <span>›</span>
+                <span className="text-emerald-600 font-medium">Add Product</span>
               </div>
             </div>
+
+            <button
+              onClick={handleSubmit}
+              disabled={submitProductMutation.isPending || !token}
+              className="bg-[#82b478]  hover:bg-[#A8C2A3] text-white px-8 py-3 rounded-xl font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:scale-105"
+            >
+              {submitProductMutation.isPending ? (
+                <span className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  Submitting...
+                </span>
+              ) : (
+                "Add Product"
+              )}
+            </button>
           </div>
         </div>
 
-        {/* RIGHT */}
-        <div className="space-y-10">
-          <div>
-            <label className="text-sm font-semibold block mb-2">
-              Product Image
-            </label>
-            <div className="relative border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-              {imagePreview ? (
-                <div>
-                  <Image
-                    src={imagePreview}
-                    width={300}
-                    height={300}
-                    alt="Preview"
-                    className="mx-auto object-cover rounded-lg shadow"
-                  />
-                  <button
-                    onClick={removeImage}
-                    className="text-red-500 text-sm mt-2"
-                    disabled={submitProductMutation.isPending}
-                  >
-                    Remove Image
-                  </button>
+        {/* Status Message */}
+        {submitStatus.type && (
+          <div
+            className={`mb-8 p-6 rounded-xl border-l-4 ${
+              submitStatus.type === "success"
+                ? "bg-emerald-50 border-emerald-500 text-emerald-800"
+                : "bg-red-50 border-red-500 text-red-800"
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              {submitStatus.type === "success" ? (
+                <div className="w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center">
+                  <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
                 </div>
               ) : (
-                <>
-                  <p className="text-gray-600 mt-2">Click or drag file here</p>
-                  <p className="text-sm text-gray-500">
-                    PNG, JPG, GIF up to 10MB
-                  </p>
-                </>
+                <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
+                  <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                </div>
               )}
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageChange}
-                className="absolute inset-0 opacity-0 cursor-pointer"
-                disabled={submitProductMutation.isPending}
-              />
+              <span className="font-medium">{submitStatus.message}</span>
             </div>
           </div>
+        )}
 
-          <div>
-            <label className="text-sm font-semibold block mb-2">Category</label>
-            <select
-              name="category"
-              value={formData.category}
-              onChange={handleInputChange}
-              className="input-style bg-white"
-              disabled={submitProductMutation.isPending || categoriesLoading}
-            >
-              <option value="">
-                {categoriesLoading
-                  ? "Loading categories..."
-                  : "Select category"}
-              </option>
-              {categories.map((cat) => (
-                <option key={cat._id} value={cat._id}>
-                  {cat.name}
-                </option>
-              ))}
-            </select>
-          </div>
+        {/* Main Form */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Left Column */}
+          <div className="space-y-6">
+            {/* Product Name */}
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <Package className="w-5 h-5 text-blue-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-slate-900">Product Information</h3>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-sm font-semibold text-slate-700 mb-2 block">
+                    Product Name
+                  </Label>
+                  <input
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    placeholder="Enter product name"
+                    className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200"
+                    disabled={submitProductMutation.isPending}
+                  />
+                </div>
+              </div>
+            </div>
 
-          {/* Shadcn Tag Field for Sub Category */}
-          <div>
-            <Label className="text-sm font-semibold block mb-2">
-              Sub Category
-            </Label>
-            <div className="space-y-2">
-              <Input
-                value={tagInput}
-                onChange={handleTagInputChange}
-                onKeyDown={handleTagInputKeyDown}
-                placeholder="Type and press Enter or comma to add subcategory"
-                className="w-full h-[49px]"
-                disabled={submitProductMutation.isPending}
-              />
-              <div className="flex flex-wrap gap-2">
-                {formData.subCategory.map((tag, index) => (
-                  <Badge
-                    key={index}
-                    variant="secondary"
-                    className="flex items-center gap-1"
-                  >
-                    {tag}
-                    <button
-                      onClick={() => removeTag(tag)}
-                      className="ml-1 hover:bg-gray-300 rounded-full p-0.5"
-                      disabled={submitProductMutation.isPending}
-                    >
-                      <X size={12} />
-                    </button>
-                  </Badge>
-                ))}
+            {/* Description */}
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-purple-100 rounded-lg">
+                  <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-semibold text-slate-900">Description</h3>
+              </div>
+              <div className="description-editor">
+                <ReactQuill
+                  value={formData.description}
+                  onChange={handleDescriptionChange}
+                  modules={quillModules}
+                  formats={quillFormats}
+                  placeholder="Write a detailed product description..."
+                  className="border-0"
+                  readOnly={submitProductMutation.isPending}
+                />
+              </div>
+            </div>
+
+            {/* Pricing */}
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <DollarSign className="w-5 h-5 text-green-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-slate-900">Pricing</h3>
+              </div>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-semibold text-slate-700 mb-2 block">
+                    Actual Price
+                  </Label>
+                  <input
+                    name="actualPrice"
+                    type="number"
+                    value={formData.actualPrice}
+                    onChange={handleInputChange}
+                    placeholder="0.00"
+                    className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200"
+                    disabled={submitProductMutation.isPending}
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm font-semibold text-slate-700 mb-2 block">
+                    Discounted Price
+                  </Label>
+                  <input
+                    name="discountedPrice"
+                    type="number"
+                    value={formData.discountedPrice}
+                    onChange={handleInputChange}
+                    placeholder="0.00"
+                    className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200"
+                    disabled={submitProductMutation.isPending}
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <Label className="text-sm font-semibold text-slate-700 mb-2 block">
+                    Saved Price
+                  </Label>
+                  <input
+                    name="savedPrice"
+                    type="number"
+                    value={formData.savedPrice}
+                    className="w-full px-4 py-3 border border-slate-300 rounded-xl bg-gray-50 text-gray-600"
+                    readOnly
+                  />
+                </div>
               </div>
             </div>
           </div>
 
-          <div>
-            <Label className="text-sm font-semibold block mb-2">
-              Brand Name
-            </Label>
-            <input
-              className="input-style"
-              name="brand"
-              value={formData.brand}
-              onChange={handleInputChange}
-              placeholder="Brand"
-              disabled={submitProductMutation.isPending}
-            />
-          </div>
-          <div>
-            <Label className="text-sm font-semibold block mb-2">In Stock</Label>
-            <input
-              className="input-style"
-              name="countInStock"
-              type="number"
-              value={formData.countInStock}
-              onChange={handleInputChange}
-              placeholder="Stock Count"
-              min="0"
-              disabled={submitProductMutation.isPending}
-            />
+          {/* Right Column */}
+          <div className="space-y-6 mt-4">
+            {/* Product Image */}
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-indigo-100 rounded-lg">
+                  <Upload className="w-5 h-5 text-indigo-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-slate-900">Product Image</h3>
+              </div>
+              <div className="relative border-2 border-dashed border-slate-300 rounded-xl p-8 text-center hover:border-emerald-400 transition-colors duration-200 bg-slate-50">
+                {imagePreview ? (
+                  <div className="space-y-4">
+                    <Image
+                      src={imagePreview}
+                      width={200}
+                      height={200}
+                      alt="Preview"
+                      className="mx-auto object-cover rounded-lg shadow-md"
+                    />
+                    <button
+                      onClick={removeImage}
+                      className="text-red-500 hover:text-red-700 text-sm font-medium transition-colors"
+                      disabled={submitProductMutation.isPending}
+                    >
+                      Remove Image
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="w-16 h-16 bg-slate-200 rounded-full flex items-center justify-center mx-auto">
+                      <Upload className="w-8 h-8 text-slate-400" />
+                    </div>
+                    <div>
+                      <p className="text-slate-700 font-medium">Click to upload or drag and drop</p>
+                      <p className="text-sm text-slate-500">PNG, JPG, GIF up to 10MB</p>
+                    </div>
+                  </div>
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="absolute inset-0 opacity-0 cursor-pointer"
+                  disabled={submitProductMutation.isPending}
+                />
+              </div>
+            </div>
+
+            {/* Category */}
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-orange-100 rounded-lg">
+                  <Tag className="w-5 h-5 text-orange-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-slate-900">Category</h3>
+              </div>
+              <select
+                name="category"
+                value={formData.category}
+                onChange={handleInputChange}
+                className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 bg-white"
+                disabled={submitProductMutation.isPending || categoriesLoading}
+              >
+                <option value="">
+                  {categoriesLoading ? "Loading categories..." : "Select category"}
+                </option>
+                {categories.map((cat) => (
+                  <option key={cat._id} value={cat._id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Sub Categories */}
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-cyan-100 rounded-lg">
+                  <Tag className="w-5 h-5 text-cyan-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-slate-900">Sub Categories</h3>
+              </div>
+              <div className="space-y-3">
+                <Input
+                  value={tagInput}
+                  onChange={handleTagInputChange}
+                  onKeyDown={handleTagInputKeyDown}
+                  placeholder="Type and press Enter or comma to add subcategory"
+                  className="h-12 px-4 rounded-xl border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  disabled={submitProductMutation.isPending}
+                />
+                <div className="flex flex-wrap gap-2">
+                  {formData.subCategory.map((tag, index) => (
+                    <Badge
+                      key={index}
+                      variant="secondary"
+                      className="flex items-center gap-1 px-3 py-1 bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-full"
+                    >
+                      {tag}
+                      <button
+                        onClick={() => removeTag(tag)}
+                        className="ml-1 hover:bg-emerald-200 rounded-full p-0.5 transition-colors"
+                        disabled={submitProductMutation.isPending}
+                      >
+                        <X size={12} />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Brand and Stock */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-2 bg-pink-100 rounded-lg">
+                    <Building2 className="w-5 h-5 text-pink-600" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-slate-900">Brand</h3>
+                </div>
+                <input
+                  className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200"
+                  name="brand"
+                  value={formData.brand}
+                  onChange={handleInputChange}
+                  placeholder="Brand name"
+                  disabled={submitProductMutation.isPending}
+                />
+              </div>
+
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-2 bg-yellow-100 rounded-lg">
+                    <Package className="w-5 h-5 text-yellow-600" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-slate-900">Stock</h3>
+                </div>
+                <input
+                  className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200"
+                  name="countInStock"
+                  type="number"
+                  value={formData.countInStock}
+                  onChange={handleInputChange}
+                  placeholder="Stock count"
+                  min="0"
+                  disabled={submitProductMutation.isPending}
+                />
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      <style jsx>{`
-        .input-style {
-          width: 100%;
-          padding: 0.75rem 1rem;
-          border: 1px solid #d1d5db;
-          border-radius: 0.5rem;
-          font-size: 0.875rem;
+      <style jsx global>{`
+        .description-editor .ql-editor {
+          min-height: 200px;
+          font-size: 14px;
+          line-height: 1.6;
+        }
+        
+        .description-editor .ql-toolbar {
+          border-top: 1px solid #e2e8f0;
+          border-left: 1px solid #e2e8f0;
+          border-right: 1px solid #e2e8f0;
+          border-bottom: none;
+          border-radius: 0.75rem 0.75rem 0 0;
+        }
+        
+        .description-editor .ql-container {
+          border-left: 1px solid #e2e8f0;
+          border-right: 1px solid #e2e8f0;
+          border-bottom: 1px solid #e2e8f0;
+          border-top: none;
+          border-radius: 0 0 0.75rem 0.75rem;
+        }
+        
+        .description-editor .ql-editor:focus {
           outline: none;
         }
-        .input-style:focus {
-          border-color: #3b82f6;
-          box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+        
+        .description-editor .ql-toolbar:hover {
+          border-color: #10b981;
+        }
+        
+        .description-editor .ql-container:hover {
+          border-color: #10b981;
         }
       `}</style>
     </div>

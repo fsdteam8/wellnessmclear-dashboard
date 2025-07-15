@@ -107,7 +107,7 @@ export function DataTable<
         size="sm"
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 1}
-        className="mr-1"
+        className="mr-1 bg-[#A8C2A3]"
       >
         <ChevronLeft className="h-4 w-4" />
       </Button>
@@ -127,7 +127,7 @@ export function DataTable<
           variant={i === currentPage ? "default" : "outline"}
           size="sm"
           onClick={() => onPageChange(i)}
-          className="mx-1"
+          className="mx-1 bg-[#A8C2A3]"
         >
           {i}
         </Button>
@@ -162,7 +162,7 @@ export function DataTable<
         size="sm"
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
-        className="ml-1"
+        className="ml-1 bg-[#A8C2A3]" 
       >
         <ChevronRight className="h-4 w-4" />
       </Button>

@@ -64,11 +64,11 @@ const columns: Column[] = [
     ),
   },
   {
-    key: "description",
-    label: "Description",
+    key: "discountedPrice",
+    label: "DiscountedPrice",
     render: (value) => (
-      <div className="max-w-[200px] text-sm text-gray-600">
-        {(value as string).slice(0, 50)}...
+      <div className="max-w-[200px] text-sm text-black">
+        ${(value as number).toFixed(2)}
       </div>
     ),
   },
@@ -183,8 +183,8 @@ export default function ProductsPage() {
   };
 
   return (
-    <div className="flex h-screen">
-      <div className="flex-1 overflow-auto">
+    <div className="flex">
+      <div className="flex-1">
         <div className="p-6 bg-[#EDEEF1]">
           <div className="mb-10">
             <PageHeader
